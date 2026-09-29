@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
 
+    # Service Bindings (e.g. Vercel Services FRONTEND_URL)
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
     # CORS Settings
     CORS_ORIGINS: Union[List[str], str] = [
         "http://localhost:5173",
@@ -38,12 +41,19 @@ class Settings(BaseSettings):
 
     @field_validator("CORS_ORIGINS", mode="before")
     def parse_cors(cls, v):
+        origins = []
         if isinstance(v, str):
             try:
-                return json.loads(v)
+                origins = json.loads(v)
             except Exception:
-                return [origin.strip() for origin in v.split(",") if origin.strip()]
-        return v
+                origins = [origin.strip() for origin in v.split(",") if origin.strip()]
+        elif isinstance(v, list):
+            origins = list(v)
+
+        frontend_binding = os.getenv("FRONTEND_URL")
+        if frontend_binding and frontend_binding not in origins:
+            origins.append(frontend_binding)
+        return origins
 
     ENABLE_DEMO_MODE: bool = True
     PRICE_ANOMALY_THRESHOLD_PCT: float = 40.0

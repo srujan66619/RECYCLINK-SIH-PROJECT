@@ -113,6 +113,7 @@ app.include_router(recycler_portal.router)
 app.include_router(handover.router)
 
 @app.get("/")
+@app.get("/api")
 def root():
     return {
         "project": settings.PROJECT_NAME,

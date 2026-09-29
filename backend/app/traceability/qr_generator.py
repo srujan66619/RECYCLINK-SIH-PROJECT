@@ -2,13 +2,17 @@ import io
 import base64
 import urllib.parse
 
-def generate_qr_data_url(trace_id: str, client_base_url: str = "http://localhost:5173") -> str:
+import os
+from app.core.config import settings
+
+def generate_qr_data_url(trace_id: str, client_base_url: str = None) -> str:
     """
     Generate QR code image data URL for a given Trace ID.
     If qrcode/PIL are available, encodes a crisp PNG.
     Fallback generates standard SVG QR or external SVG link.
     """
-    trace_url = f"{client_base_url}/trace/{trace_id}"
+    base_url = (client_base_url or getattr(settings, "FRONTEND_URL", None) or os.getenv("FRONTEND_URL", "http://localhost:5173")).rstrip("/")
+    trace_url = f"{base_url}/trace/{trace_id}"
     try:
         import qrcode
         qr = qrcode.QRCode(
