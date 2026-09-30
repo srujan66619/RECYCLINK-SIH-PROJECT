@@ -17,6 +17,11 @@ from app.models.audit_log import AuditLog
 from app.models.pickup_record import PickupRecord, PickupStatus
 from app.models.ai_feedback import AIFeedback
 from app.models.collection_drive import CollectionDrive
+from app.models.intelligence_recommendation import (
+    IntelligenceRecommendation, RecommendationStatus, RecommendationPriority
+)
+from app.models.decision_history import DecisionHistory
+from app.models.trace_alert import TraceAlert, TraceAlertSeverity, TraceAlertStatus
 
 __all__ = [
     "Base",
@@ -48,5 +53,14 @@ __all__ = [
     "AnomalySeverity",
     "AnomalyStatus",
     "SafetyGuide",
-    "AuditLog"
+    "AuditLog",
+    "CollectionDrive",
+    "IntelligenceRecommendation",
+    "RecommendationStatus",
+    "RecommendationPriority",
+    "DecisionHistory",
+    "TraceAlert",
+    "TraceAlertSeverity",
+    "TraceAlertStatus"
 ]
+

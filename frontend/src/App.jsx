@@ -63,6 +63,10 @@ import DigitalMaterialPassport from './pages/DigitalMaterialPassport';
 import CircularFlowView from './pages/admin/CircularFlowView';
 import AdminDemoControlView from './pages/admin/AdminDemoControlView';
 
+// Phase 11: Autonomous Circular Economy Intelligence & Network Optimization
+import AdminIntelligenceCenter from './pages/admin/AdminIntelligenceCenter';
+
+
 // Trace wrapper to consume :traceId param
 function TraceExplorerRoute() {
   const { traceId } = useParams();
@@ -212,8 +216,10 @@ export default function App() {
               <Route path="audit-logs" element={<AdminAuditLogsView />} />
               <Route path="settings" element={<AdminSettingsView />} />
               <Route path="circular-flow" element={<CircularFlowView />} />
+              <Route path="intelligence" element={<AdminIntelligenceCenter />} />
               <Route path="demo" element={<AdminDemoControlView />} />
             </Route>
+
 
             {/* Collector Authentication */}
             <Route path="/collector/login" element={<CollectorLogin />} />

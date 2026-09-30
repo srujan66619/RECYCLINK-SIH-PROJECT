@@ -115,8 +115,18 @@ export default function AdminDemoControlView() {
       desc: "Canonical traceable lot RC-2026-000241 with 14-stage journey, cryptographic SHA-256 chain verification, and privacy-protected collector metadata.",
       actionText: "Open Material Passport",
       route: "/passport/RC-2026-000241"
+    },
+    {
+      id: "scenario_7",
+      title: "Scenario 7: Closed-Loop Network Intelligence",
+      badge: "Phase 11 Autonomous",
+      badgeColor: "emerald",
+      desc: "PCB capacity bottleneck detected at 94% ceiling → System analyzes ground-truth database records → Generates recommendation REC-2026-001 with evidence & counterfactual → Admin executes human-in-the-loop approval → Decision history audit written & network rebalanced.",
+      actionText: "Launch Intelligence Center",
+      route: "/admin/intelligence"
     }
   ];
+
 
   return (
     <div className="space-y-6">

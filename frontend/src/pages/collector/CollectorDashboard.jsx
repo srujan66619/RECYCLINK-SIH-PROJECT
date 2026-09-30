@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import {
   Camera, DollarSign, RefreshCw, Package, Wallet, ShieldAlert,
   Award, Wifi, WifiOff, Mic, MicOff, Volume2, ArrowRight,
-  CheckCircle2, AlertTriangle, ChevronRight, Globe
+  CheckCircle2, AlertTriangle, ChevronRight, Globe, Sparkles
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useI18n } from '../../context/I18nContext';
 import collectorService from '../../services/collectorService';
+import { getCollectorInsights } from '../../services/api';
 import { useNetworkStatus } from '../../services/offlineSync';
+
 import voiceService from '../../services/voiceService';
 import offlineDb from '../../services/offlineDb';
 import { LoadingSpinner } from '../../components/common/StateViews';
@@ -21,6 +23,7 @@ export default function CollectorDashboard() {
   const { isOnline, networkState, pendingCount, queueStats, lastSyncedAt, syncNow } = useNetworkStatus();
 
   const [stats, setStats] = useState(null);
+  const [collectorInsights, setCollectorInsights] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -29,10 +32,15 @@ export default function CollectorDashboard() {
   const fetchDashboard = async () => {
     try {
       if (navigator.onLine) {
-        const data = await collectorService.getDashboard();
+        const [data, insights] = await Promise.all([
+          collectorService.getDashboard(),
+          getCollectorInsights().catch(() => null)
+        ]);
         setStats(data);
+        if (insights) setCollectorInsights(insights);
         await offlineDb.setCache('collector_dashboard', data);
       } else {
+
         const cached = await offlineDb.getCache('collector_dashboard');
         if (cached) {
           setStats(cached);
@@ -508,8 +516,43 @@ export default function CollectorDashboard() {
             </div>
             <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
           </div>
+
+          {/* 9. Phase 11: Collector Opportunity Insights (Non-sensitive, privacy-preserving) */}
+          {collectorInsights && (
+            <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/40 border border-emerald-500/30 rounded-3xl p-5 shadow-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+                    Your Monthly Impact &amp; Insights
+                  </span>
+                </div>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                  Private &amp; Verified
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80">
+                  <span className="text-slate-400 block text-[11px] mb-0.5">Collections this Month</span>
+                  <span className="text-lg font-bold text-white">{collectorInsights.completed_collections_month} lots</span>
+                </div>
+                <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800/80">
+                  <span className="text-slate-400 block text-[11px] mb-0.5">Top Handled Material</span>
+                  <span className="text-lg font-bold text-emerald-300 truncate block">{collectorInsights.most_frequent_material}</span>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-300 leading-snug bg-slate-950/50 p-3 rounded-2xl border border-slate-800/60">
+                💡 <span className="font-semibold text-white">{collectorInsights.recommendation_tip}</span>
+              </p>
+            </div>
+          )}
         </>
       )}
+
     </div>
   );
 }

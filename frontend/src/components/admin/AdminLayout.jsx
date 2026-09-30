@@ -80,6 +80,7 @@ export default function AdminLayout({
     {
       title: "Intelligence",
       items: [
+        { name: "Intelligence Center", path: "/admin/intelligence", icon: BrainCircuit, badge: "P11" },
         { name: "Circular Flow & Twin", path: "/admin/circular-flow", icon: Recycle },
         { name: "AI Insights", path: "/admin/analytics", icon: BrainCircuit },
         { name: "Demo Control Suite", path: "/admin/demo", icon: Sparkles },
@@ -87,6 +88,7 @@ export default function AdminLayout({
         { name: "Recycler Network", path: "/admin/recyclers", icon: Building2 },
       ]
     },
+
     {
       title: "Reports",
       items: [

@@ -322,4 +322,89 @@ export const updateAdminSettings = async (settingsData) => {
   return res.data;
 };
 
+// ==========================================
+// Phase 11: Circular Economy Intelligence APIs
+// ==========================================
+
+export const getIntelligenceOverview = async () => {
+  const res = await api.get('/intelligence/overview');
+  return res.data;
+};
+
+export const getIntelligenceTrends = async () => {
+  const res = await api.get('/intelligence/trends');
+  return res.data;
+};
+
+export const getIntelligenceForecast = async () => {
+  const res = await api.get('/intelligence/forecast');
+  return res.data;
+};
+
+export const getIntelligenceBottlenecks = async () => {
+  const res = await api.get('/intelligence/bottlenecks');
+  return res.data;
+};
+
+export const getIntelligenceRecommendations = async (params) => {
+  const res = await api.get('/intelligence/recommendations', { params });
+  return res.data;
+};
+
+export const actOnRecommendation = async (recId, actionData) => {
+  const res = await api.post(`/intelligence/recommendations/${recId}/action`, actionData);
+  return res.data;
+};
+
+export const getIntelligenceDecisions = async () => {
+  const res = await api.get('/intelligence/decisions');
+  return res.data;
+};
+
+export const getIntelligenceOpportunities = async () => {
+  const res = await api.get('/intelligence/opportunities');
+  return res.data;
+};
+
+export const getRecyclerNetworkCapacity = async () => {
+  const res = await api.get('/intelligence/recycler-network');
+  return res.data;
+};
+
+export const getAIPerformanceAnalytics = async () => {
+  const res = await api.get('/intelligence/ai-performance');
+  return res.data;
+};
+
+export const queryDecisionSupport = async (queryText) => {
+  const res = await api.post('/intelligence/decision-support', { query: queryText });
+  return res.data;
+};
+
+export const getIntelligenceTraceAlerts = async (params) => {
+  const res = await api.get('/intelligence/trace-alerts', { params });
+  return res.data;
+};
+
+export const resolveTraceAlert = async (alertId, actionData) => {
+  const res = await api.post(`/intelligence/trace-alerts/${alertId}/action`, actionData);
+  return res.data;
+};
+
+export const runScenarioSimulation = async (scenarioType, parameterChangePct = 25.0) => {
+  const res = await api.post('/intelligence/simulations', {
+    scenario_type: scenarioType,
+    parameter_change_pct: parameterChangePct
+  });
+  return res.data;
+};
+
+export const getCollectorInsights = async (collectorId) => {
+  const res = await api.get('/intelligence/collector-insights', {
+    params: collectorId ? { collector_id: collectorId } : {}
+  });
+  return res.data;
+};
+
 export default api;
+
