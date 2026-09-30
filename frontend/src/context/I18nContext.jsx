@@ -8,11 +8,18 @@ const translations = { en, hi, mr };
 const I18nContext = createContext(null);
 
 export function I18nProvider({ children }) {
-  const [locale, setLocale] = useState(() => localStorage.getItem('recyclink_locale') || 'en');
+  const [locale, setLocale] = useState(() => {
+    return (
+      localStorage.getItem('preferred_language') ||
+      localStorage.getItem('recyclink_locale') ||
+      'en'
+    );
+  });
 
   const changeLanguage = (newLocale) => {
     if (translations[newLocale]) {
       setLocale(newLocale);
+      localStorage.setItem('preferred_language', newLocale);
       localStorage.setItem('recyclink_locale', newLocale);
     }
   };
@@ -23,7 +30,9 @@ export function I18nProvider({ children }) {
       if (typeof defaultOrParams === 'string' && defaultOrParams) {
         text = defaultOrParams;
       } else {
-        text = key;
+        // Never show raw translation keys like "dashboard.identify"
+        const lastPart = key.split('.').pop() || key;
+        text = lastPart.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
       }
     }
 

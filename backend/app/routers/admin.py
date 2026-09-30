@@ -149,7 +149,6 @@ def get_traceability_analytics(
     return AnalyticsService.get_traceability_metrics(db=db, city=city)
 
 @router.get("/analytics/ai", response_model=AIAnalyticsStats)
-@router.get("/ai/analytics", response_model=AIAnalyticsStats)
 def get_ai_operational_analytics(
     db: Session = Depends(get_db)
 ):
@@ -157,6 +156,16 @@ def get_ai_operational_analytics(
     Prototype AI classification volume, confidence distribution, and low-confidence predictions.
     """
     return AnalyticsService.get_ai_metrics(db=db)
+
+@router.get("/ai/analytics")
+def get_ai_service_analytics(
+    db: Session = Depends(get_db)
+):
+    """
+    Operational analytics for AI classification engine.
+    """
+    from app.ai.service import ai_service_engine
+    return ai_service_engine.get_analytics(db=db)
 
 @router.get("/analytics/safety", response_model=SafetyAnalyticsStats)
 def get_safety_analytics(

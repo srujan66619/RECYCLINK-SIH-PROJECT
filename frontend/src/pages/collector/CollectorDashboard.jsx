@@ -2,65 +2,285 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Camera, DollarSign, RefreshCw, Package, Wallet, ShieldAlert,
-  ArrowUpRight, Award, CheckCircle2, AlertCircle, ChevronRight
+  Award, Wifi, WifiOff, Mic, MicOff, Volume2, ArrowRight,
+  CheckCircle2, AlertTriangle, ChevronRight, Globe
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useI18n } from '../../context/I18nContext';
 import collectorService from '../../services/collectorService';
-import { LoadingSpinner, ErrorCard } from '../../components/common/StateViews';
+import { useNetworkStatus } from '../../services/offlineSync';
+import voiceService from '../../services/voiceService';
+import offlineDb from '../../services/offlineDb';
+import { LoadingSpinner } from '../../components/common/StateViews';
 
 export default function CollectorDashboard() {
   const { user } = useAuth();
-  const { t } = useI18n();
+  const { t, locale, changeLanguage } = useI18n();
   const navigate = useNavigate();
+  const { isOnline, networkState, pendingCount, queueStats, lastSyncedAt, syncNow } = useNetworkStatus();
 
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceFeedback, setVoiceFeedback] = useState(null);
 
   const fetchDashboard = async () => {
-    setLoading(true);
-    setError(null);
     try {
-      const data = await collectorService.getDashboard();
-      setStats(data);
-      setLoading(false);
+      if (navigator.onLine) {
+        const data = await collectorService.getDashboard();
+        setStats(data);
+        await offlineDb.setCache('collector_dashboard', data);
+      } else {
+        const cached = await offlineDb.getCache('collector_dashboard');
+        if (cached) {
+          setStats(cached);
+        } else {
+          setStats({
+            collector_name: user?.full_name || 'Collector',
+            today_earnings: 0,
+            total_earnings: 0,
+            active_lots_count: 0,
+            completed_tx_count: 0,
+            total_kg_collected: 0,
+            city: user?.city || 'Local'
+          });
+        }
+      }
     } catch (err) {
-      setError(err.response?.data?.error?.message || 'Unable to load dashboard metrics from backend.');
+      console.warn('Dashboard fetch offline fallback:', err);
+      const cached = await offlineDb.getCache('collector_dashboard');
+      if (cached) setStats(cached);
+    } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchDashboard();
-  }, []);
+  }, [isOnline]);
+
+  const handleManualSync = async () => {
+    setIsSyncing(true);
+    try {
+      await syncNow();
+      await fetchDashboard();
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleVoiceCommand = () => {
+    if (!voiceService.isSpeechRecognitionSupported()) {
+      alert(t('voice.not_supported'));
+      return;
+    }
+
+    if (isListening) {
+      setIsListening(false);
+      return;
+    }
+
+    setIsListening(true);
+    setVoiceFeedback({ text: t('voice.listening'), type: 'info' });
+
+    voiceService.startListening({
+      langCode: locale,
+      onResult: ({ rawText, matchedCommand }) => {
+        setIsListening(false);
+        if (matchedCommand) {
+          setVoiceFeedback({
+            text: `Command recognized: "${rawText}"`,
+            type: 'success'
+          });
+
+          // Execute safe command
+          if (matchedCommand.action === 'NAVIGATE') {
+            setTimeout(() => navigate(matchedCommand.path), 600);
+          } else if (matchedCommand.action === 'CHANGE_LANG') {
+            changeLanguage(matchedCommand.lang);
+          } else if (matchedCommand.action === 'SELECT_MATERIAL') {
+            navigate('/collector/identify', { state: { presetMaterial: matchedCommand.material } });
+          }
+        } else {
+          setVoiceFeedback({
+            text: `Heard: "${rawText}". Try saying: "पहचानें", "कमाई", "लॉट" or "सुरक्षा"`,
+            type: 'warning'
+          });
+        }
+      },
+      onError: (msg) => {
+        setIsListening(false);
+        setVoiceFeedback({ text: msg, type: 'error' });
+      },
+      onEnd: () => {
+        setIsListening(false);
+      }
+    });
+  };
+
+  const collectorName = stats?.collector_name || user?.full_name || 'Collector';
+
+  // Format sync timestamp
+  const formattedSyncTime = lastSyncedAt
+    ? new Date(lastSyncedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : 'Not yet';
 
   if (loading) {
     return <LoadingSpinner message={t('loading') || 'Loading recycling activity...'} />;
   }
 
-  if (error) {
-    return <ErrorCard message={error} onRetry={fetchDashboard} />;
-  }
-
-  const collectorName = stats?.collector_name || user?.full_name || 'Collector';
-
   return (
-    <div className="space-y-5 pb-6">
-      {/* Welcome Banner */}
+    <div className="space-y-4 pb-8 max-w-lg mx-auto">
+      {/* 1. Network Status Bar & Quick Language Switcher */}
+      <div className="flex items-center justify-between bg-slate-900/90 border border-slate-800 rounded-2xl p-2.5 shadow-md">
+        {/* Network Pill */}
+        <div className="flex items-center gap-2">
+          {isOnline ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              {networkState === 'SYNCING' || isSyncing ? t('offline.syncing') : t('offline.online')}
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40">
+              <WifiOff className="w-3.5 h-3.5 text-rose-400" />
+              {t('offline.offline')}
+            </span>
+          )}
+
+          {pendingCount > 0 && (
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              {pendingCount} {t('offline.pending_sync') || 'Pending'}
+            </span>
+          )}
+        </div>
+
+        {/* Vernacular Language Selector */}
+        <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+          <button
+            onClick={() => changeLanguage('en')}
+            className={`px-2.5 py-1 text-xs font-bold rounded-lg transition ${
+              locale === 'en'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            EN
+          </button>
+          <button
+            onClick={() => changeLanguage('hi')}
+            className={`px-2.5 py-1 text-xs font-bold rounded-lg transition ${
+              locale === 'hi'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            हिन्दी
+          </button>
+          <button
+            onClick={() => changeLanguage('mr')}
+            className={`px-2.5 py-1 text-xs font-bold rounded-lg transition ${
+              locale === 'mr'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            मराठी
+          </button>
+        </div>
+      </div>
+
+      {/* 2. Offline Warning Banner (Shown only when offline) */}
+      {!isOnline && (
+        <div className="bg-gradient-to-r from-amber-950/80 via-slate-900 to-amber-950/80 border border-amber-600/50 rounded-2xl p-3.5 flex items-center gap-3 shadow-lg">
+          <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0">
+            <WifiOff className="w-5 h-5" />
+          </div>
+          <div className="flex-1">
+            <p className="text-xs font-medium text-amber-200 leading-snug">
+              {t('offline.banner')}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Sync Status Card (Visible if pending queue or sync stats exist) */}
+      {(pendingCount > 0 || queueStats.failed > 0 || isSyncing) && (
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 shadow-md flex items-center justify-between">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-white">
+                {t('offline.pending_count', { count: pendingCount }).replace('{count}', pendingCount)}
+              </span>
+              {queueStats.failed > 0 && (
+                <span className="text-[10px] text-rose-400 font-bold">
+                  ({queueStats.failed} failed)
+                </span>
+              )}
+            </div>
+            <span className="text-[11px] text-slate-400 block">
+              {t('offline.last_synced')}: {formattedSyncTime}
+            </span>
+          </div>
+
+          <button
+            onClick={handleManualSync}
+            disabled={!isOnline || isSyncing}
+            className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition ${
+              !isOnline || isSyncing
+                ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md active:scale-95'
+            }`}
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+            <span>{isSyncing ? t('offline.syncing') : t('offline.retry_btn')}</span>
+          </button>
+        </div>
+      )}
+
+      {/* 4. Voice Feedback Popup Bar */}
+      {voiceFeedback && (
+        <div
+          className={`p-3 rounded-xl text-xs font-medium border flex items-center justify-between animate-in fade-in duration-150 ${
+            voiceFeedback.type === 'success'
+              ? 'bg-emerald-950/80 border-emerald-700/50 text-emerald-200'
+              : voiceFeedback.type === 'error'
+              ? 'bg-rose-950/80 border-rose-700/50 text-rose-200'
+              : 'bg-slate-800 border-slate-700 text-slate-200'
+          }`}
+        >
+          <span>{voiceFeedback.text}</span>
+          <button
+            onClick={() => setVoiceFeedback(null)}
+            className="text-slate-400 hover:text-white text-xs font-bold px-1.5"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* 5. Welcome & Earnings Overview Banner */}
       <div className="bg-gradient-to-br from-emerald-900/60 via-slate-900 to-slate-900 border border-emerald-800/40 rounded-3xl p-5 shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
               <Award className="w-3 h-3" />
-              Verified Kabadiwala
-            </span>
-            <span className="text-xs text-amber-400 font-bold flex items-center">
-              ★ {stats?.rating || 4.9}
+              Verified Collector
             </span>
           </div>
-          <span className="text-[11px] text-slate-400">{stats?.city || user?.city || 'Hyderabad'}</span>
+
+          {/* Voice Assistant Mic Trigger Button */}
+          <button
+            onClick={handleVoiceCommand}
+            title={t('voice.tap_to_speak')}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition shadow-lg ${
+              isListening
+                ? 'bg-rose-500 text-white animate-pulse ring-4 ring-rose-500/30'
+                : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30 active:scale-95'
+            }`}
+          >
+            {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+          </button>
         </div>
 
         <h2 className="text-xl font-black text-white tracking-tight">
@@ -74,7 +294,7 @@ export default function CollectorDashboard() {
         <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-slate-800/80">
           <div>
             <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 block">
-              {t('today_earnings') || "Today's Earnings"}
+              {t('dashboard.earnings') || "My Earnings"}
             </span>
             <span className="text-2xl font-black text-emerald-400">
               ₹{stats?.today_earnings?.toLocaleString('en-IN') || 0}
@@ -91,112 +311,133 @@ export default function CollectorDashboard() {
         </div>
       </div>
 
-      {/* Secondary Metrics Strip */}
-      <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-3">
-          <span className="text-[10px] uppercase font-bold text-slate-400 block truncate">Total Recycled</span>
-          <span className="text-lg font-black text-white">{stats?.total_kg_collected || 0} kg</span>
-        </div>
-        <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-3">
-          <span className="text-[10px] uppercase font-bold text-slate-400 block truncate">Active Lots</span>
-          <span className="text-lg font-black text-amber-400">{stats?.active_lots_count || 0}</span>
-        </div>
-        <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-3">
-          <span className="text-[10px] uppercase font-bold text-slate-400 block truncate">Formal Sales</span>
-          <span className="text-lg font-black text-teal-400">{stats?.completed_tx_count || 0}</span>
-        </div>
+      {/* 6. PRIMARY HERO ACTION (Large Touch Target 64px+) */}
+      <div>
+        <button
+          onClick={() => navigate('/collector/identify')}
+          className="w-full min-h-[72px] p-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white rounded-3xl shadow-xl shadow-emerald-950/60 flex items-center justify-between transition active:scale-[0.98] group border border-emerald-400/30"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-sm group-hover:scale-105 transition shadow-inner">
+              <Camera className="w-7 h-7 text-white" />
+            </div>
+            <div className="text-left">
+              <span className="text-base font-black tracking-tight block">
+                {t('dashboard.identify')}
+              </span>
+              <span className="text-xs text-white/80 font-medium block">
+                {isOnline ? 'AI Scanner + Fair Price' : 'Offline Draft Intake'}
+              </span>
+            </div>
+          </div>
+          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center group-hover:translate-x-1 transition">
+            <ArrowRight className="w-5 h-5 text-white" />
+          </div>
+        </button>
       </div>
 
-      {/* Primary Actions Grid (High Accessibility Large Touch Targets) */}
-      <div className="space-y-2">
-        <h3 className="text-xs uppercase font-bold tracking-wider text-slate-400 px-1">
-          Quick Actions
-        </h3>
+      {/* 7. SECONDARY ACTIONS GRID (Large Touch Targets 56px+) */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Action: My Lots */}
+        <button
+          onClick={() => navigate('/collector/lots')}
+          className="flex flex-col items-start justify-between p-4 bg-slate-900 border border-slate-800 hover:border-emerald-500/50 text-white rounded-2xl min-h-[110px] shadow-md text-left transition active:scale-[0.98] group relative"
+        >
+          <div className="w-11 h-11 rounded-xl bg-amber-950/80 border border-amber-700/40 text-amber-400 flex items-center justify-center group-hover:scale-110 transition">
+            <Package className="w-5 h-5" />
+          </div>
+          <div>
+            <span className="font-bold text-sm block leading-tight">
+              {t('dashboard.my_lots')}
+            </span>
+            <span className="text-[11px] text-slate-400 font-normal">
+              {stats?.active_lots_count || 0} {t('active_lots') || 'active'}
+            </span>
+          </div>
+        </button>
 
-        <div className="grid grid-cols-2 gap-3">
-          {/* Action 1: Identify E-Waste */}
-          <button
-            onClick={() => navigate('/collector/identify')}
-            className="flex flex-col items-start justify-between p-4 bg-gradient-to-br from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white rounded-2xl min-h-[112px] shadow-lg shadow-emerald-950/50 text-left transition active:scale-[0.98] group"
-          >
-            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm group-hover:scale-110 transition">
-              <Camera className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <span className="font-bold text-sm block leading-tight">
-                {t('action_identify') || 'Identify E-Waste'}
-              </span>
-              <span className="text-[11px] text-white/80 font-normal">AI Scanner</span>
-            </div>
-          </button>
-
-          {/* Action 2: Check Fair Price */}
-          <button
-            onClick={() => navigate('/collector/fair-price')}
-            className="flex flex-col items-start justify-between p-4 bg-slate-900 border border-slate-800 hover:border-emerald-500/50 text-white rounded-2xl min-h-[112px] shadow-md text-left transition active:scale-[0.98] group"
-          >
-            <div className="w-10 h-10 rounded-xl bg-emerald-950/80 border border-emerald-700/40 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition">
-              <DollarSign className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="font-bold text-sm block leading-tight">
-                {t('action_price') || 'Check Fair Price'}
-              </span>
-              <span className="text-[11px] text-slate-400 font-normal">CPCB Rates</span>
-            </div>
-          </button>
-
-          {/* Action 3: Find Recycler */}
-          <button
-            onClick={() => navigate('/collector/recyclers')}
-            className="flex flex-col items-start justify-between p-4 bg-slate-900 border border-slate-800 hover:border-emerald-500/50 text-white rounded-2xl min-h-[112px] shadow-md text-left transition active:scale-[0.98] group"
-          >
-            <div className="w-10 h-10 rounded-xl bg-teal-950/80 border border-teal-700/40 text-teal-400 flex items-center justify-center group-hover:scale-110 transition">
-              <RefreshCw className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="font-bold text-sm block leading-tight">
-                {t('action_recycler') || 'Find Recycler'}
-              </span>
-              <span className="text-[11px] text-slate-400 font-normal">Verified Demo</span>
-            </div>
-          </button>
-
-          {/* Action 4: My Lots */}
-          <button
-            onClick={() => navigate('/collector/lots')}
-            className="flex flex-col items-start justify-between p-4 bg-slate-900 border border-slate-800 hover:border-emerald-500/50 text-white rounded-2xl min-h-[112px] shadow-md text-left transition active:scale-[0.98] group"
-          >
-            <div className="w-10 h-10 rounded-xl bg-amber-950/80 border border-amber-700/40 text-amber-400 flex items-center justify-center group-hover:scale-110 transition">
-              <Package className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="font-bold text-sm block leading-tight">
-                {t('action_lots') || 'My Lots'}
-              </span>
-              <span className="text-[11px] text-slate-400 font-normal">
-                {stats?.active_lots_count || 0} active
-              </span>
-            </div>
-          </button>
-        </div>
-      </div>
-
-      {/* Safety Awareness Banner Card */}
-      <div 
-        onClick={() => navigate('/collector/safety')}
-        className="bg-gradient-to-r from-amber-950/50 to-slate-900 border border-amber-800/40 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:border-amber-700 transition"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0">
+        {/* Action: Safety Guides */}
+        <button
+          onClick={() => navigate('/collector/safety')}
+          className="flex flex-col items-start justify-between p-4 bg-slate-900 border border-slate-800 hover:border-rose-500/50 text-white rounded-2xl min-h-[110px] shadow-md text-left transition active:scale-[0.98] group"
+        >
+          <div className="w-11 h-11 rounded-xl bg-rose-950/80 border border-rose-700/40 text-rose-400 flex items-center justify-center group-hover:scale-110 transition">
             <ShieldAlert className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="text-sm font-bold text-white">E-Waste Safety Standards</h4>
-            <p className="text-[11px] text-slate-300">Do NOT burn cables • Avoid acid leaching</p>
+            <span className="font-bold text-sm block leading-tight text-rose-300">
+              {t('dashboard.safety')}
+            </span>
+            <span className="text-[11px] text-slate-400 font-normal">
+              Battery, CRT, PCB
+            </span>
+          </div>
+        </button>
+
+        {/* Action: My Earnings */}
+        <button
+          onClick={() => navigate('/collector/earnings')}
+          className="flex flex-col items-start justify-between p-4 bg-slate-900 border border-slate-800 hover:border-emerald-500/50 text-white rounded-2xl min-h-[110px] shadow-md text-left transition active:scale-[0.98] group"
+        >
+          <div className="w-11 h-11 rounded-xl bg-emerald-950/80 border border-emerald-700/40 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition">
+            <DollarSign className="w-5 h-5" />
+          </div>
+          <div>
+            <span className="font-bold text-sm block leading-tight">
+              {t('dashboard.earnings')}
+            </span>
+            <span className="text-[11px] text-slate-400 font-normal">
+              CPCB Fair Rates
+            </span>
+          </div>
+        </button>
+
+        {/* Action: Track Lot */}
+        <button
+          onClick={() => navigate('/trace')}
+          className="flex flex-col items-start justify-between p-4 bg-slate-900 border border-slate-800 hover:border-teal-500/50 text-white rounded-2xl min-h-[110px] shadow-md text-left transition active:scale-[0.98] group"
+        >
+          <div className="w-11 h-11 rounded-xl bg-teal-950/80 border border-teal-700/40 text-teal-400 flex items-center justify-center group-hover:scale-110 transition">
+            <RefreshCw className="w-5 h-5" />
+          </div>
+          <div>
+            <span className="font-bold text-sm block leading-tight">
+              {t('dashboard.track_lot')}
+            </span>
+            <span className="text-[11px] text-slate-400 font-normal">
+              Trace ID & QR
+            </span>
+          </div>
+        </button>
+      </div>
+
+      {/* 8. Safety Awareness Teaser Card */}
+      <div
+        onClick={() => navigate('/collector/safety')}
+        className="bg-gradient-to-r from-rose-950/40 via-slate-900 to-amber-950/40 border border-rose-900/40 rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-rose-700 transition"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center flex-shrink-0">
+            <ShieldAlert className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-white">
+              {locale === 'hi'
+                ? 'सुरक्षा निर्देश: बैटरी और सीआरटी'
+                : locale === 'mr'
+                ? 'सुरक्षा सूचना: बॅटरी व सीआरटी'
+                : 'Safety Protocols: Battery & CRT'}
+            </h4>
+            <p className="text-[11px] text-slate-400">
+              {locale === 'hi'
+                ? 'कभी भी आग में न जलाएं • तेजाब से बचें'
+                : locale === 'mr'
+                ? 'कधीही जाळू नका • ॲसिड वापरू नका'
+                : 'Do NOT burn cables • Avoid acid leaching'}
+            </p>
           </div>
         </div>
-        <ChevronRight className="w-5 h-5 text-slate-400 flex-shrink-0" />
+        <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
       </div>
     </div>
   );

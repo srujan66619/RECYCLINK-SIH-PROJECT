@@ -1147,3 +1147,25 @@ class AnalyticsService:
             }
             for a in logs
         ]
+
+    @classmethod
+    def get_safety_analytics(cls, db: Session) -> SafetyAnalyticsStats:
+        high_lots = db.query(EWasteLot).filter(EWasteLot.hazard_level == "HIGH").count()
+        med_lots = db.query(EWasteLot).filter(EWasteLot.hazard_level == "MEDIUM").count()
+        low_lots = db.query(EWasteLot).filter(EWasteLot.hazard_level == "LOW").count()
+        total = high_lots + med_lots + low_lots
+        high_pct = round((high_lots / total * 100), 1) if total > 0 else 0.0
+        guide_views = 42 + high_lots * 3
+        safety_alerts = high_lots + int(med_lots * 0.4)
+
+        return SafetyAnalyticsStats(
+            demo_data=True,
+            safety_guide_views=guide_views,
+            high_hazard_lots=high_lots,
+            medium_hazard_lots=med_lots,
+            low_hazard_lots=low_lots,
+            high_hazard_pct=high_pct,
+            safety_alerts_count=safety_alerts
+        )
+
+    get_safety_metrics = get_safety_analytics
