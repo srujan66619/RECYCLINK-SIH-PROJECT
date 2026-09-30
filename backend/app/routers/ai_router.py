@@ -17,10 +17,13 @@ from app.ai.schemas import (
     AnomalyDetectionResponse,
     ManualClassificationRequest,
     AIAnalyticsResponse,
+    AIFeedbackCreate,
+    AIFeedbackResponse,
 )
 
 router = APIRouter(prefix="/api/ai", tags=["AI Material Intelligence"])
 
+@router.post("/classify", response_model=MaterialClassifyResponse)
 @router.post("/classify-material", response_model=MaterialClassifyResponse)
 async def classify_material(
     request: Request,
@@ -186,3 +189,41 @@ def get_ai_analytics(
     """
     metrics = ai_service_engine.get_analytics(db=db)
     return AIAnalyticsResponse(**metrics)
+
+@router.post("/feedback", response_model=AIFeedbackResponse)
+def record_ai_human_feedback(
+    feedback: AIFeedbackCreate,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_current_user)
+):
+    """
+    Human-in-the-Loop AI Feedback: Store collector corrections to model predictions.
+    This creates an active learning dataset without unsupervised production tampering.
+    """
+    from datetime import datetime
+    from app.models.ai_feedback import AIFeedback
+
+    fb_entry = AIFeedback(
+        prediction_id=feedback.prediction_id,
+        lot_id=feedback.lot_id,
+        original_prediction=feedback.original_prediction,
+        original_confidence=feedback.original_confidence,
+        corrected_material=feedback.corrected_material,
+        user_role=current_user.role if current_user else "COLLECTOR",
+        user_id=current_user.id if current_user else None,
+        notes=feedback.notes,
+        created_at=datetime.utcnow()
+    )
+    db.add(fb_entry)
+    db.commit()
+    db.refresh(fb_entry)
+
+    return AIFeedbackResponse(
+        id=fb_entry.id,
+        feedback_id=fb_entry.id,
+        success=True,
+        corrected_material=fb_entry.corrected_material,
+        status="RECORDED",
+        message="Human-in-the-loop correction saved for future model improvement pipeline.",
+        created_at=fb_entry.created_at
+    )

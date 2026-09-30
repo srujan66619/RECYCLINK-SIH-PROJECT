@@ -377,3 +377,81 @@ def update_system_settings(
         new_settings=payload,
         admin_user=current_user
     )
+
+# ==========================================
+# PHASE 10: CIRCULAR FLOW & DEMO CONTROL
+# ==========================================
+
+@router.get("/circular-flow")
+def get_circular_economy_flow(
+    material: Optional[str] = Query(None, description="Filter by material name"),
+    city: Optional[str] = Query(None, description="Filter by city hub"),
+    db: Session = Depends(get_db)
+):
+    """
+    Phase 10: Circular Economy Digital Twin & Supply-Demand Capacity Map.
+    Visualizes informal intake, formal processing, and alerts when material supply
+    exceeds authorized recycler capacity.
+    """
+    return AnalyticsService.get_circular_flow(db=db, material=material, city=city)
+
+@router.get("/pickup-clusters")
+def get_smart_pickup_clusters(
+    city: Optional[str] = Query(None, description="City filter"),
+    db: Session = Depends(get_db)
+):
+    """
+    Phase 10: Smart Pickup Batching and route aggregation.
+    """
+    return AnalyticsService.get_pickup_clusters(db=db, city=city)
+
+@router.get("/scenario-simulation")
+def get_what_if_scenario_simulation(
+    participation_pct: float = Query(20.0, description="Projected informal collector growth percentage (e.g. 20.0, 50.0)"),
+    db: Session = Depends(get_db)
+):
+    """
+    Phase 10: What-If Scenario Simulator for government and municipal planners.
+    """
+    return AnalyticsService.get_scenario_simulation(db=db, participation_increase_pct=participation_pct)
+
+@router.get("/collection-drives")
+def list_community_collection_drives(
+    db: Session = Depends(get_db)
+):
+    """
+    Phase 10: List all community e-waste collection drives.
+    """
+    return AnalyticsService.get_community_drives(db=db)
+
+@router.post("/collection-drives", status_code=status.HTTP_201_CREATED)
+def create_community_collection_drive(
+    payload: Dict[str, Any],
+    db: Session = Depends(get_db)
+):
+    """
+    Phase 10: Create a new municipal/community collection drive.
+    """
+    return AnalyticsService.create_community_drive(db=db, drive_data=payload)
+
+@router.post("/demo/reset")
+def reset_demo_environment(
+    current_user: Optional[User] = Depends(get_optional_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Phase 10: SIH Grand Finale Demo Reset.
+    Safely resets state to baseline demo dataset without deleting system accounts.
+    """
+    return AnalyticsService.reset_demo_data(db=db, admin_user=current_user)
+
+@router.post("/demo/scenario/{scenario_id}")
+def trigger_demo_scenario(
+    scenario_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Phase 10: Trigger 1 of 6 SIH Grand Finale demo scenarios (scenario_1 to scenario_6).
+    """
+    return AnalyticsService.trigger_demo_scenario(db=db, scenario_id=scenario_id)
+

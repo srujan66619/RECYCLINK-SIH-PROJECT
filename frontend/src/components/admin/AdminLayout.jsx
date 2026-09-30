@@ -5,7 +5,7 @@ import {
   Users, Building2, Layers, AlertOctagon, BrainCircuit, 
   FileSpreadsheet, ClipboardList, Settings, Menu, X, 
   Search, ShieldAlert, CheckCircle2, ChevronRight, LogOut,
-  Sparkles, Filter, Calendar
+  Sparkles, Filter, Calendar, Recycle
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { searchAdmin } from '../../services/api';
@@ -80,7 +80,9 @@ export default function AdminLayout({
     {
       title: "Intelligence",
       items: [
+        { name: "Circular Flow & Twin", path: "/admin/circular-flow", icon: Recycle },
         { name: "AI Insights", path: "/admin/analytics", icon: BrainCircuit },
+        { name: "Demo Control Suite", path: "/admin/demo", icon: Sparkles },
         { name: "Price Intelligence", path: "/admin/analytics", icon: Sparkles },
         { name: "Recycler Network", path: "/admin/recyclers", icon: Building2 },
       ]

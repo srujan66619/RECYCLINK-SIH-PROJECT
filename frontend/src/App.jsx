@@ -58,6 +58,11 @@ import AdminReportsView from './pages/admin/AdminReportsView';
 import AdminAuditLogsView from './pages/admin/AdminAuditLogsView';
 import AdminSettingsView from './pages/admin/AdminSettingsView';
 
+// Phase 10: Grand Finale National Intelligence & Digital Passport
+import DigitalMaterialPassport from './pages/DigitalMaterialPassport';
+import CircularFlowView from './pages/admin/CircularFlowView';
+import AdminDemoControlView from './pages/admin/AdminDemoControlView';
+
 // Trace wrapper to consume :traceId param
 function TraceExplorerRoute() {
   const { traceId } = useParams();
@@ -167,6 +172,24 @@ export default function App() {
               } 
             />
 
+            {/* Digital Material Passport (Phase 10) */}
+            <Route 
+              path="/passport" 
+              element={
+                <PublicPortalLayout activeView="passport">
+                  <DigitalMaterialPassport />
+                </PublicPortalLayout>
+              } 
+            />
+            <Route 
+              path="/passport/:traceId" 
+              element={
+                <PublicPortalLayout activeView="passport">
+                  <DigitalMaterialPassport />
+                </PublicPortalLayout>
+              } 
+            />
+
             {/* Admin / CPCB Government Intelligence Workspace (Phase 8) */}
             <Route 
               path="/admin" 
@@ -188,6 +211,8 @@ export default function App() {
               <Route path="reports" element={<AdminReportsView />} />
               <Route path="audit-logs" element={<AdminAuditLogsView />} />
               <Route path="settings" element={<AdminSettingsView />} />
+              <Route path="circular-flow" element={<CircularFlowView />} />
+              <Route path="demo" element={<AdminDemoControlView />} />
             </Route>
 
             {/* Collector Authentication */}

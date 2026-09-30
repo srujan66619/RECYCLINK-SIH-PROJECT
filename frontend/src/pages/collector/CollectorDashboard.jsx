@@ -12,10 +12,11 @@ import { useNetworkStatus } from '../../services/offlineSync';
 import voiceService from '../../services/voiceService';
 import offlineDb from '../../services/offlineDb';
 import { LoadingSpinner } from '../../components/common/StateViews';
+import LanguageSelector from '../../components/common/LanguageSelector';
 
 export default function CollectorDashboard() {
   const { user } = useAuth();
-  const { t, locale, changeLanguage } = useI18n();
+  const { t, locale, changeLanguage, accessibilityMode, toggleAccessibilityMode } = useI18n();
   const navigate = useNavigate();
   const { isOnline, networkState, pendingCount, queueStats, lastSyncedAt, syncNow } = useNetworkStatus();
 
@@ -155,38 +156,9 @@ export default function CollectorDashboard() {
           )}
         </div>
 
-        {/* Vernacular Language Selector */}
-        <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
-          <button
-            onClick={() => changeLanguage('en')}
-            className={`px-2.5 py-1 text-xs font-bold rounded-lg transition ${
-              locale === 'en'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            EN
-          </button>
-          <button
-            onClick={() => changeLanguage('hi')}
-            className={`px-2.5 py-1 text-xs font-bold rounded-lg transition ${
-              locale === 'hi'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            हिन्दी
-          </button>
-          <button
-            onClick={() => changeLanguage('mr')}
-            className={`px-2.5 py-1 text-xs font-bold rounded-lg transition ${
-              locale === 'mr'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            मराठी
-          </button>
+        {/* National Vernacular Language Selector & Mode */}
+        <div className="flex items-center gap-1.5">
+          <LanguageSelector />
         </div>
       </div>
 
@@ -259,186 +231,285 @@ export default function CollectorDashboard() {
         </div>
       )}
 
-      {/* 5. Welcome & Earnings Overview Banner */}
-      <div className="bg-gradient-to-br from-emerald-900/60 via-slate-900 to-slate-900 border border-emerald-800/40 rounded-3xl p-5 shadow-xl relative overflow-hidden">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-              <Award className="w-3 h-3" />
-              Verified Collector
+      {/* Accessibility Simple Mode vs Standard Mode */}
+      {accessibilityMode === 'simple' ? (
+        <div className="space-y-4 pt-1">
+          <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
+            <span className="text-xs font-black text-amber-300 uppercase tracking-wider">
+              SIMPLE ACCESSIBILITY MODE
             </span>
+            <button
+              onClick={toggleAccessibilityMode}
+              className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 hover:text-white border border-slate-700"
+            >
+              Switch to Standard
+            </button>
           </div>
 
-          {/* Voice Assistant Mic Trigger Button */}
+          {/* Big Hero Camera Button */}
+          <button
+            onClick={() => navigate('/collector/identify')}
+            className="w-full min-h-[96px] p-5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xl rounded-3xl shadow-2xl flex items-center justify-between active:scale-95 transition border-2 border-white/20"
+          >
+            <div className="flex items-center space-x-4">
+              <div className="w-16 h-16 rounded-2xl bg-slate-950/20 flex items-center justify-center">
+                <Camera className="w-9 h-9 text-slate-950" />
+              </div>
+              <div className="text-left">
+                <div className="text-xl font-extrabold">{t('dashboard.identify')}</div>
+                <div className="text-xs font-bold text-slate-900/80">Take Scrap Photo</div>
+              </div>
+            </div>
+            <ArrowRight className="w-8 h-8 text-slate-950" />
+          </button>
+
+          {/* Big Voice Button */}
           <button
             onClick={handleVoiceCommand}
-            title={t('voice.tap_to_speak')}
-            className={`w-10 h-10 rounded-full flex items-center justify-center transition shadow-lg ${
+            className={`w-full min-h-[84px] p-5 rounded-3xl font-black text-lg flex items-center justify-between shadow-xl active:scale-95 transition border-2 ${
               isListening
-                ? 'bg-rose-500 text-white animate-pulse ring-4 ring-rose-500/30'
-                : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30 active:scale-95'
+                ? 'bg-rose-500 text-white animate-pulse border-white'
+                : 'bg-slate-900 text-emerald-400 border-emerald-500/40 hover:bg-slate-800'
             }`}
           >
-            {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+            <div className="flex items-center space-x-4">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 flex items-center justify-center">
+                {isListening ? <MicOff className="w-8 h-8 text-rose-300" /> : <Mic className="w-8 h-8 text-emerald-400" />}
+              </div>
+              <div className="text-left">
+                <div className="text-lg">{isListening ? 'Listening...' : 'Voice Assistant'}</div>
+                <div className="text-xs font-semibold text-slate-400">Speak in your language</div>
+              </div>
+            </div>
+            <Volume2 className="w-6 h-6 text-slate-400" />
           </button>
-        </div>
 
-        <h2 className="text-xl font-black text-white tracking-tight">
-          {t('welcome_msg', { name: collectorName }).replace('{name}', collectorName)}
-        </h2>
-        <p className="text-xs text-emerald-300/90 font-medium mt-0.5">
-          {t('ready_to_recycle') || 'Ready to recycle smarter today?'}
-        </p>
+          {/* Big My Lots Button */}
+          <button
+            onClick={() => navigate('/collector/lots')}
+            className="w-full min-h-[84px] p-5 bg-slate-900 hover:bg-slate-800 text-white font-black text-lg rounded-3xl border border-slate-800 flex items-center justify-between active:scale-95 transition shadow-lg"
+          >
+            <div className="flex items-center space-x-4">
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                <Package className="w-8 h-8" />
+              </div>
+              <div className="text-left">
+                <div className="text-lg">{t('dashboard.my_lots')}</div>
+                <div className="text-xs font-semibold text-slate-400">View collected e-waste</div>
+              </div>
+            </div>
+            <ArrowRight className="w-6 h-6 text-slate-400" />
+          </button>
 
-        {/* Quick Earnings Metric */}
-        <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-slate-800/80">
-          <div>
-            <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 block">
-              {t('dashboard.earnings') || "My Earnings"}
-            </span>
-            <span className="text-2xl font-black text-emerald-400">
-              ₹{stats?.today_earnings?.toLocaleString('en-IN') || 0}
-            </span>
-          </div>
-          <div>
-            <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 block">
-              {t('total_earnings') || 'Total Earned'}
-            </span>
-            <span className="text-xl font-bold text-white">
+          {/* Big Safety Button */}
+          <button
+            onClick={() => navigate('/collector/safety')}
+            className="w-full min-h-[84px] p-5 bg-slate-900 hover:bg-slate-800 text-white font-black text-lg rounded-3xl border border-slate-800 flex items-center justify-between active:scale-95 transition shadow-lg"
+          >
+            <div className="flex items-center space-x-4">
+              <div className="w-14 h-14 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center">
+                <ShieldAlert className="w-8 h-8" />
+              </div>
+              <div className="text-left">
+                <div className="text-lg">{t('dashboard.safety')}</div>
+                <div className="text-xs font-semibold text-slate-400">Hazard warnings & guidelines</div>
+              </div>
+            </div>
+            <ArrowRight className="w-6 h-6 text-slate-400" />
+          </button>
+
+          {/* Simple Total Earnings Display */}
+          <div className="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 text-center">
+            <span className="text-xs uppercase font-bold text-slate-400">{t('dashboard.earnings')}</span>
+            <div className="text-3xl font-black text-emerald-400 mt-1">
               ₹{stats?.total_earnings?.toLocaleString('en-IN') || 0}
-            </span>
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* 5. Welcome & Earnings Overview Banner */}
+          <div className="bg-gradient-to-br from-emerald-900/60 via-slate-900 to-slate-900 border border-emerald-800/40 rounded-3xl p-5 shadow-xl relative overflow-hidden">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  <Award className="w-3 h-3" />
+                  Verified Collector
+                </span>
+              </div>
 
-      {/* 6. PRIMARY HERO ACTION (Large Touch Target 64px+) */}
-      <div>
-        <button
-          onClick={() => navigate('/collector/identify')}
-          className="w-full min-h-[72px] p-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white rounded-3xl shadow-xl shadow-emerald-950/60 flex items-center justify-between transition active:scale-[0.98] group border border-emerald-400/30"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-sm group-hover:scale-105 transition shadow-inner">
-              <Camera className="w-7 h-7 text-white" />
+              {/* Voice Assistant Mic Trigger Button */}
+              <button
+                onClick={handleVoiceCommand}
+                title={t('voice.tap_to_speak')}
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition shadow-lg ${
+                  isListening
+                    ? 'bg-rose-500 text-white animate-pulse ring-4 ring-rose-500/30'
+                    : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30 active:scale-95'
+                }`}
+              >
+                {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+              </button>
             </div>
-            <div className="text-left">
-              <span className="text-base font-black tracking-tight block">
-                {t('dashboard.identify')}
-              </span>
-              <span className="text-xs text-white/80 font-medium block">
-                {isOnline ? 'AI Scanner + Fair Price' : 'Offline Draft Intake'}
-              </span>
-            </div>
-          </div>
-          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center group-hover:translate-x-1 transition">
-            <ArrowRight className="w-5 h-5 text-white" />
-          </div>
-        </button>
-      </div>
 
-      {/* 7. SECONDARY ACTIONS GRID (Large Touch Targets 56px+) */}
-      <div className="grid grid-cols-2 gap-3">
-        {/* Action: My Lots */}
-        <button
-          onClick={() => navigate('/collector/lots')}
-          className="flex flex-col items-start justify-between p-4 bg-slate-900 border border-slate-800 hover:border-emerald-500/50 text-white rounded-2xl min-h-[110px] shadow-md text-left transition active:scale-[0.98] group relative"
-        >
-          <div className="w-11 h-11 rounded-xl bg-amber-950/80 border border-amber-700/40 text-amber-400 flex items-center justify-center group-hover:scale-110 transition">
-            <Package className="w-5 h-5" />
-          </div>
-          <div>
-            <span className="font-bold text-sm block leading-tight">
-              {t('dashboard.my_lots')}
-            </span>
-            <span className="text-[11px] text-slate-400 font-normal">
-              {stats?.active_lots_count || 0} {t('active_lots') || 'active'}
-            </span>
-          </div>
-        </button>
-
-        {/* Action: Safety Guides */}
-        <button
-          onClick={() => navigate('/collector/safety')}
-          className="flex flex-col items-start justify-between p-4 bg-slate-900 border border-slate-800 hover:border-rose-500/50 text-white rounded-2xl min-h-[110px] shadow-md text-left transition active:scale-[0.98] group"
-        >
-          <div className="w-11 h-11 rounded-xl bg-rose-950/80 border border-rose-700/40 text-rose-400 flex items-center justify-center group-hover:scale-110 transition">
-            <ShieldAlert className="w-5 h-5" />
-          </div>
-          <div>
-            <span className="font-bold text-sm block leading-tight text-rose-300">
-              {t('dashboard.safety')}
-            </span>
-            <span className="text-[11px] text-slate-400 font-normal">
-              Battery, CRT, PCB
-            </span>
-          </div>
-        </button>
-
-        {/* Action: My Earnings */}
-        <button
-          onClick={() => navigate('/collector/earnings')}
-          className="flex flex-col items-start justify-between p-4 bg-slate-900 border border-slate-800 hover:border-emerald-500/50 text-white rounded-2xl min-h-[110px] shadow-md text-left transition active:scale-[0.98] group"
-        >
-          <div className="w-11 h-11 rounded-xl bg-emerald-950/80 border border-emerald-700/40 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition">
-            <DollarSign className="w-5 h-5" />
-          </div>
-          <div>
-            <span className="font-bold text-sm block leading-tight">
-              {t('dashboard.earnings')}
-            </span>
-            <span className="text-[11px] text-slate-400 font-normal">
-              CPCB Fair Rates
-            </span>
-          </div>
-        </button>
-
-        {/* Action: Track Lot */}
-        <button
-          onClick={() => navigate('/trace')}
-          className="flex flex-col items-start justify-between p-4 bg-slate-900 border border-slate-800 hover:border-teal-500/50 text-white rounded-2xl min-h-[110px] shadow-md text-left transition active:scale-[0.98] group"
-        >
-          <div className="w-11 h-11 rounded-xl bg-teal-950/80 border border-teal-700/40 text-teal-400 flex items-center justify-center group-hover:scale-110 transition">
-            <RefreshCw className="w-5 h-5" />
-          </div>
-          <div>
-            <span className="font-bold text-sm block leading-tight">
-              {t('dashboard.track_lot')}
-            </span>
-            <span className="text-[11px] text-slate-400 font-normal">
-              Trace ID & QR
-            </span>
-          </div>
-        </button>
-      </div>
-
-      {/* 8. Safety Awareness Teaser Card */}
-      <div
-        onClick={() => navigate('/collector/safety')}
-        className="bg-gradient-to-r from-rose-950/40 via-slate-900 to-amber-950/40 border border-rose-900/40 rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-rose-700 transition"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center flex-shrink-0">
-            <ShieldAlert className="w-5 h-5" />
-          </div>
-          <div>
-            <h4 className="text-xs font-bold text-white">
-              {locale === 'hi'
-                ? 'सुरक्षा निर्देश: बैटरी और सीआरटी'
-                : locale === 'mr'
-                ? 'सुरक्षा सूचना: बॅटरी व सीआरटी'
-                : 'Safety Protocols: Battery & CRT'}
-            </h4>
-            <p className="text-[11px] text-slate-400">
-              {locale === 'hi'
-                ? 'कभी भी आग में न जलाएं • तेजाब से बचें'
-                : locale === 'mr'
-                ? 'कधीही जाळू नका • ॲसिड वापरू नका'
-                : 'Do NOT burn cables • Avoid acid leaching'}
+            <h2 className="text-xl font-black text-white tracking-tight">
+              {t('welcome_msg', { name: collectorName }).replace('{name}', collectorName)}
+            </h2>
+            <p className="text-xs text-emerald-300/90 font-medium mt-0.5">
+              {t('ready_to_recycle') || 'Ready to recycle smarter today?'}
             </p>
+
+            {/* Quick Earnings Metric */}
+            <div className="grid grid-cols-2 gap-3 mt-4 pt-3 border-t border-slate-800/80">
+              <div>
+                <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 block">
+                  {t('dashboard.earnings') || "My Earnings"}
+                </span>
+                <span className="text-2xl font-black text-emerald-400">
+                  ₹{stats?.today_earnings?.toLocaleString('en-IN') || 0}
+                </span>
+              </div>
+              <div>
+                <span className="text-[11px] uppercase tracking-wider font-semibold text-slate-400 block">
+                  {t('total_earnings') || 'Total Earned'}
+                </span>
+                <span className="text-xl font-bold text-white">
+                  ₹{stats?.total_earnings?.toLocaleString('en-IN') || 0}
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
-        <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
-      </div>
+
+          {/* 6. PRIMARY HERO ACTION (Large Touch Target 64px+) */}
+          <div>
+            <button
+              onClick={() => navigate('/collector/identify')}
+              className="w-full min-h-[72px] p-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white rounded-3xl shadow-xl shadow-emerald-950/60 flex items-center justify-between transition active:scale-[0.98] group border border-emerald-400/30"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-sm group-hover:scale-105 transition shadow-inner">
+                  <Camera className="w-7 h-7 text-white" />
+                </div>
+                <div className="text-left">
+                  <span className="text-base font-black tracking-tight block">
+                    {t('dashboard.identify')}
+                  </span>
+                  <span className="text-xs text-white/80 font-medium block">
+                    {isOnline ? 'AI Scanner + Fair Price' : 'Offline Draft Intake'}
+                  </span>
+                </div>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center group-hover:translate-x-1 transition">
+                <ArrowRight className="w-5 h-5 text-white" />
+              </div>
+            </button>
+          </div>
+
+          {/* 7. SECONDARY ACTIONS GRID (Large Touch Targets 56px+) */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Action: My Lots */}
+            <button
+              onClick={() => navigate('/collector/lots')}
+              className="flex flex-col items-start justify-between p-4 bg-slate-900 border border-slate-800 hover:border-emerald-500/50 text-white rounded-2xl min-h-[110px] shadow-md text-left transition active:scale-[0.98] group relative"
+            >
+              <div className="w-11 h-11 rounded-xl bg-amber-950/80 border border-amber-700/40 text-amber-400 flex items-center justify-center group-hover:scale-110 transition">
+                <Package className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="font-bold text-sm block leading-tight">
+                  {t('dashboard.my_lots')}
+                </span>
+                <span className="text-[11px] text-slate-400 font-normal">
+                  {stats?.active_lots_count || 0} {t('active_lots') || 'active'}
+                </span>
+              </div>
+            </button>
+
+            {/* Action: Safety Guides */}
+            <button
+              onClick={() => navigate('/collector/safety')}
+              className="flex flex-col items-start justify-between p-4 bg-slate-900 border border-slate-800 hover:border-rose-500/50 text-white rounded-2xl min-h-[110px] shadow-md text-left transition active:scale-[0.98] group"
+            >
+              <div className="w-11 h-11 rounded-xl bg-rose-950/80 border border-rose-700/40 text-rose-400 flex items-center justify-center group-hover:scale-110 transition">
+                <ShieldAlert className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="font-bold text-sm block leading-tight text-rose-300">
+                  {t('dashboard.safety')}
+                </span>
+                <span className="text-[11px] text-slate-400 font-normal">
+                  Battery, CRT, PCB
+                </span>
+              </div>
+            </button>
+
+            {/* Action: My Earnings */}
+            <button
+              onClick={() => navigate('/collector/earnings')}
+              className="flex flex-col items-start justify-between p-4 bg-slate-900 border border-slate-800 hover:border-emerald-500/50 text-white rounded-2xl min-h-[110px] shadow-md text-left transition active:scale-[0.98] group"
+            >
+              <div className="w-11 h-11 rounded-xl bg-emerald-950/80 border border-emerald-700/40 text-emerald-400 flex items-center justify-center group-hover:scale-110 transition">
+                <DollarSign className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="font-bold text-sm block leading-tight">
+                  {t('dashboard.earnings')}
+                </span>
+                <span className="text-[11px] text-slate-400 font-normal">
+                  CPCB Fair Rates
+                </span>
+              </div>
+            </button>
+
+            {/* Action: Track Lot */}
+            <button
+              onClick={() => navigate('/trace')}
+              className="flex flex-col items-start justify-between p-4 bg-slate-900 border border-slate-800 hover:border-teal-500/50 text-white rounded-2xl min-h-[110px] shadow-md text-left transition active:scale-[0.98] group"
+            >
+              <div className="w-11 h-11 rounded-xl bg-teal-950/80 border border-teal-700/40 text-teal-400 flex items-center justify-center group-hover:scale-110 transition">
+                <RefreshCw className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="font-bold text-sm block leading-tight">
+                  {t('dashboard.track_lot')}
+                </span>
+                <span className="text-[11px] text-slate-400 font-normal">
+                  Trace ID & QR
+                </span>
+              </div>
+            </button>
+          </div>
+
+          {/* 8. Safety Awareness Teaser Card */}
+          <div
+            onClick={() => navigate('/collector/safety')}
+            className="bg-gradient-to-r from-rose-950/40 via-slate-900 to-amber-950/40 border border-rose-900/40 rounded-2xl p-3.5 flex items-center justify-between cursor-pointer hover:border-rose-700 transition"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center flex-shrink-0">
+                <ShieldAlert className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-white">
+                  {locale === 'hi'
+                    ? 'सुरक्षा निर्देश: बैटरी और सीआरटी'
+                    : locale === 'mr'
+                    ? 'सुरक्षा सूचना: बॅटरी व सीआरटी'
+                    : 'Safety Protocols: Battery & CRT'}
+                </h4>
+                <p className="text-[11px] text-slate-400">
+                  {locale === 'hi'
+                    ? 'कभी भी आग में न जलाएं • तेजाब से बचें'
+                    : locale === 'mr'
+                    ? 'कधीही जाळू नका • ॲसिड वापरू नका'
+                    : 'Do NOT burn cables • Avoid acid leaching'}
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -15,8 +15,9 @@ from app.routers import (
 )
 from app.database.migration_phase7 import migrate_database
 from app.database.migration_phase9 import migrate_database_phase9
+from app.database.migration_phase10 import migrate_database_phase10
 
-# Ensure database tables exist and Phase 7 & 9 columns/tables are migrated
+# Ensure database tables exist and Phase 7, 9 & 10 columns/tables are migrated
 Base.metadata.create_all(bind=engine)
 try:
     migrate_database("recyclink.db")
@@ -25,6 +26,11 @@ except Exception:
 
 try:
     migrate_database_phase9("recyclink.db")
+except Exception:
+    pass
+
+try:
+    migrate_database_phase10("recyclink.db")
 except Exception:
     pass
 

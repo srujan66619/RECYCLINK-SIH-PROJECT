@@ -20,19 +20,41 @@ export default function LandingHero({ setActiveView, onStartDemo }) {
         
         <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full glass-panel-emerald mb-6 text-emerald-300 text-xs font-semibold tracking-wide border border-emerald-500/30 animate-pulse">
           <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Smart India Hackathon 2026 | PS: SIH26229</span>
+          <span>Smart India Hackathon 2026 | PS: SIH26229 | Kabadiwala Connect</span>
         </div>
 
-        <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-extrabold text-white tracking-tight leading-[1.1] mb-6">
-          Making Every E-Waste Transaction <br className="hidden sm:block" />
-          <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-green-500 bg-clip-text text-transparent">
-            Fair, Formal & Traceable.
+        <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-extrabold text-white tracking-tight leading-[1.1] mb-4">
+          RECYCLINK <br className="hidden sm:block" />
+          <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-green-500 bg-clip-text text-transparent text-3xl sm:text-5xl lg:text-6xl block mt-2">
+            From Informal Collection to Formal Recycling
           </span>
         </h1>
 
-        <p className="max-w-2xl mx-auto text-slate-300 text-base sm:text-lg leading-relaxed mb-10">
-          {t('hero_subtitle', 'An AI-powered platform connecting informal e-waste collectors with authorized recyclers through fair pricing, smart matching and digital traceability.')}
+        <p className="max-w-2xl mx-auto text-emerald-400 font-mono text-sm sm:text-base font-semibold tracking-wide mb-3">
+          Identify. Price. Match. Trace. Recycle.
         </p>
+
+        <p className="max-w-2xl mx-auto text-slate-300 text-sm sm:text-base leading-relaxed mb-6">
+          A national digital bridge bringing informal kabadiwalas into the formal circular economy through AI vision intelligence, transparent pricing, licensed recycler matching, and cryptographic traceability.
+        </p>
+
+        {/* Visual Flow Indicator: Collector -> Recycler -> Circular Economy */}
+        <div className="max-w-xl mx-auto mb-8 p-3 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between text-xs text-slate-300">
+          <div className="flex items-center space-x-1.5 text-emerald-400 font-bold">
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span>Informal Collector</span>
+          </div>
+          <ArrowRight className="w-4 h-4 text-slate-500" />
+          <div className="flex items-center space-x-1.5 text-teal-400 font-bold">
+            <span className="w-2 h-2 rounded-full bg-teal-400" />
+            <span>Authorized Recycler</span>
+          </div>
+          <ArrowRight className="w-4 h-4 text-slate-500" />
+          <div className="flex items-center space-x-1.5 text-cyan-400 font-bold">
+            <span className="w-2 h-2 rounded-full bg-cyan-400" />
+            <span>Circular Economy</span>
+          </div>
+        </div>
 
         {/* CTA Button Group */}
         <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-14">
@@ -43,18 +65,8 @@ export default function LandingHero({ setActiveView, onStartDemo }) {
             }}
             className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-sm sm:text-base shadow-lg shadow-emerald-500/30 hover:scale-105 active:scale-95 transition flex items-center space-x-2"
           >
-            <span>{t('start_as_collector', 'Start as Collector')}</span>
+            <span>START COLLECTING</span>
             <ArrowRight className="w-4 h-4" />
-          </button>
-
-          <button
-            onClick={() => {
-              if (setActiveView) setActiveView('recycler');
-              navigate('/recycler');
-            }}
-            className="px-6 py-3.5 rounded-xl glass-panel hover:bg-slate-800 text-white font-semibold text-sm sm:text-base border border-slate-700 hover:border-slate-600 transition"
-          >
-            {t('recycler_login', 'Recycler Portal')}
           </button>
 
           <button
@@ -65,11 +77,19 @@ export default function LandingHero({ setActiveView, onStartDemo }) {
             className="px-6 py-3.5 rounded-xl glass-panel hover:bg-slate-800 text-emerald-400 font-semibold text-sm sm:text-base border border-emerald-500/30 hover:border-emerald-500/60 transition flex items-center space-x-2"
           >
             <QrCode className="w-4 h-4 text-emerald-400" />
-            <span>{t('track_ewaste', 'Track Trace ID')}</span>
+            <span>TRACK E-WASTE</span>
           </button>
 
           <button
-            onClick={onStartDemo}
+            onClick={() => navigate('/passport/RC-2026-000241')}
+            className="px-6 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-teal-300 border border-teal-500/30 font-semibold text-sm sm:text-base transition flex items-center space-x-2"
+          >
+            <ShieldCheck className="w-4 h-4 text-teal-400" />
+            <span>Digital Passport</span>
+          </button>
+
+          <button
+            onClick={() => navigate('/admin/demo')}
             className="px-6 py-3.5 rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 font-bold text-sm sm:text-base transition flex items-center space-x-2"
           >
             <Sparkles className="w-4 h-4 text-amber-400" />

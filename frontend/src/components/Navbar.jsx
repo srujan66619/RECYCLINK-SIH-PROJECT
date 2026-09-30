@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
+import LanguageSelector from './common/LanguageSelector';
 
 export default function Navbar({ activeView, setActiveView, onStartDemo, isOffline, setIsOffline }) {
   const navigate = useNavigate();
@@ -92,6 +93,18 @@ export default function Navbar({ activeView, setActiveView, onStartDemo, isOffli
           </button>
           <button
             onClick={() => {
+              navigate('/passport/RC-2026-000241');
+            }}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+              location.pathname.startsWith('/passport')
+                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            Digital Passport
+          </button>
+          <button
+            onClick={() => {
               if (setActiveView) setActiveView('admin');
               navigate('/admin');
             }}
@@ -133,27 +146,8 @@ export default function Navbar({ activeView, setActiveView, onStartDemo, isOffli
             <span className="hidden sm:inline">{isOffline ? 'Offline' : 'Online'}</span>
           </button>
 
-          {/* Language Selector */}
-          <div className="flex items-center rounded-lg bg-slate-900 border border-slate-800 p-0.5">
-            <button
-              onClick={() => changeLanguage('en')}
-              className={`px-2 py-0.5 rounded text-xs font-semibold transition ${locale === 'en' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
-            >
-              EN
-            </button>
-            <button
-              onClick={() => changeLanguage('hi')}
-              className={`px-2 py-0.5 rounded text-xs font-semibold transition ${locale === 'hi' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
-            >
-              हिं
-            </button>
-            <button
-              onClick={() => changeLanguage('mr')}
-              className={`px-2 py-0.5 rounded text-xs font-semibold transition ${locale === 'mr' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}
-            >
-              मरा
-            </button>
-          </div>
+          {/* National Language Selector (8 Languages) */}
+          <LanguageSelector />
 
           {/* Role Switcher Menu */}
           <div className="relative">

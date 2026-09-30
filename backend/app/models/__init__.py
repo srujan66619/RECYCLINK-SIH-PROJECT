@@ -15,6 +15,8 @@ from app.models.anomaly_alert import AnomalyAlert, AnomalySeverity, AnomalyStatu
 from app.models.safety_guide import SafetyGuide
 from app.models.audit_log import AuditLog
 from app.models.pickup_record import PickupRecord, PickupStatus
+from app.models.ai_feedback import AIFeedback
+from app.models.collection_drive import CollectionDrive
 
 __all__ = [
     "Base",
@@ -40,6 +42,8 @@ __all__ = [
     "TraceEvent",
     "TraceStage",
     "AIPrerecognition",
+    "AIPrediction",
+    "AIFeedback",
     "AnomalyAlert",
     "AnomalySeverity",
     "AnomalyStatus",

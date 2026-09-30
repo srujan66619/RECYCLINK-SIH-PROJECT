@@ -12,6 +12,7 @@ class ImageValidationResponse(BaseModel):
 
 class MaterialClassifyResponse(BaseModel):
     prediction_id: Optional[int] = None
+    material: Optional[str] = None
     detected_material: str
     material_category: str
     material_subcategory: str
@@ -27,11 +28,36 @@ class MaterialClassifyResponse(BaseModel):
     recommended_fair_price: float
     recoverable_materials: List[str]
     model_name: str = "recycLink-demo-classifier"
-    model_version: str = "1.0-demo"
+    model_version: str = "2.0-national"
     is_demo_prediction: bool = True
     explanation: str
+    explainability_reasons: List[str] = []
+    reasons: List[str] = []
     safety_summary: str
+    safety_guidance: Optional[str] = None
+    recyclability_category: str = "HIGH"
+    recommended_handling: Optional[str] = None
+    recommended_recycler_category: str = "E-WASTE_RECYCLER"
+    possible_alternatives: List[Dict[str, Any]] = []
+    alternatives: List[Dict[str, Any]] = []
     sample_image_url: Optional[str] = None
+
+class AIFeedbackCreate(BaseModel):
+    prediction_id: Optional[int] = None
+    lot_id: Optional[int] = None
+    original_prediction: str
+    original_confidence: Optional[float] = None
+    corrected_material: str
+    notes: Optional[str] = None
+
+class AIFeedbackResponse(BaseModel):
+    id: int
+    feedback_id: Optional[int] = None
+    success: bool = True
+    status: str = "RECORDED"
+    corrected_material: Optional[str] = None
+    message: str
+    created_at: datetime
 
 class ValueEstimateRequest(BaseModel):
     material_id: Optional[int] = None

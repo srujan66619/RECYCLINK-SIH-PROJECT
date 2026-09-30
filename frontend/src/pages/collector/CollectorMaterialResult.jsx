@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Sparkles, DollarSign, RefreshCw, AlertTriangle, ShieldCheck,
-  ArrowRight, Layers, Award, Volume2, ShieldAlert, Check
+  ArrowRight, Layers, Award, Volume2, ShieldAlert, Check, 
+  HelpCircle, Edit3, X, Info
 } from 'lucide-react';
+import axios from 'axios';
 import { useI18n } from '../../context/I18nContext';
 import voiceService from '../../services/voiceService';
 import safetyService from '../../services/safetyService';
@@ -20,6 +22,14 @@ export default function CollectorMaterialResult() {
 
   const [acknowledged, setAcknowledged] = useState(false);
   const [isPlayingVoice, setIsPlayingVoice] = useState(false);
+  
+  // Phase 10: Human-in-the-Loop AI override & state
+  const rawMaterial = result?.detected_material || result?.material || 'Printed Circuit Board (PCB)';
+  const [currentMaterial, setCurrentMaterial] = useState(rawMaterial);
+  const [showCorrectionModal, setShowCorrectionModal] = useState(false);
+  const [correctionNote, setCorrectionNote] = useState('');
+  const [feedbackRecorded, setFeedbackRecorded] = useState(false);
+  const [proceedWithCaution, setProceedWithCaution] = useState(false);
 
   if (!result) {
     return (
@@ -35,20 +45,33 @@ export default function CollectorMaterialResult() {
     );
   }
 
-  const materialName = result.detected_material || 'Printed Circuit Board (PCB)';
-  const confidence = Math.round((result.confidence || 0.94) * 100);
+  const confidenceScore = result.confidence !== undefined ? result.confidence : 0.94;
+  const confidence = Math.round(confidenceScore * 100);
+  const isLowConfidence = confidenceScore < 0.70 && !proceedWithCaution;
+
   const weight = result.estimated_weight_kg || initialWeight;
   const priceMin = result.estimated_price_range?.min || Math.round(weight * 390);
   const priceMax = result.estimated_price_range?.max || Math.round(weight * 480);
   const hazard = result.hazard_level || 'MEDIUM';
   const metals = result.recoverable_materials || ['Copper', 'Gold', 'Silver', 'Tin'];
+  const explainabilityReasons = result.explainability_reasons || result.reasons || [
+    'Board-like structure and printed copper circuitry observed',
+    'Capacitor and integrated circuit packaging patterns detected',
+    'Green substrate reflective index consistent with FR-4 laminate'
+  ];
+  const alternatives = result.alternatives || [
+    { material: 'Electronic Components', confidence: 0.04 }
+  ];
+  const recyclability = result.recyclability_category || 'HIGH RECOVERY';
+  const recommendedHandling = result.recommended_handling || 'Dismantle mechanically with nitrile gloves. Avoid high-heat burning or acid contact.';
+  const recyclerCategory = result.recommended_recycler_category || 'CPCB-Authorized E-Waste Refiner';
 
-  const isHighHazard = hazard === 'HIGH' || hazard === 'CRITICAL' || materialName.includes('Battery') || materialName.includes('CRT');
+  const isHighHazard = hazard === 'HIGH' || hazard === 'CRITICAL' || currentMaterial.includes('Battery') || currentMaterial.includes('CRT');
 
   const handleSpeak = () => {
     setIsPlayingVoice(true);
     voiceService.speakMaterialResult({
-      material: materialName,
+      material: currentMaterial,
       weight,
       hazard,
       lang: locale
@@ -59,7 +82,7 @@ export default function CollectorMaterialResult() {
   const handleAcknowledge = async () => {
     setAcknowledged(true);
     await safetyService.acknowledgeSafety({
-      material_name: materialName,
+      material_name: currentMaterial,
       hazard_level: hazard
     });
   };
@@ -67,15 +90,47 @@ export default function CollectorMaterialResult() {
   const handleCheckFairPrice = () => {
     navigate('/collector/fair-price', {
       state: {
-        material: materialName,
+        material: currentMaterial,
         weight_kg: weight,
         photo_url: photoUrl,
         hazard_level: hazard,
-        confidence: result.confidence || 0.94,
+        confidence: confidenceScore,
         recoverable_materials: metals,
       },
     });
   };
+
+  // Phase 10: Human-in-the-Loop Feedback Submission
+  const handleCorrectAI = async (selectedNewMaterial) => {
+    try {
+      await axios.post('/api/ai/feedback', {
+        original_prediction: rawMaterial,
+        original_confidence: confidenceScore,
+        corrected_material: selectedNewMaterial,
+        user_role: 'COLLECTOR',
+        notes: correctionNote || 'Collector manual override'
+      });
+      setCurrentMaterial(selectedNewMaterial);
+      setFeedbackRecorded(true);
+      setShowCorrectionModal(false);
+      setTimeout(() => setFeedbackRecorded(false), 3000);
+    } catch (err) {
+      console.error("Failed to submit AI feedback:", err);
+      // Fallback update locally anyway
+      setCurrentMaterial(selectedNewMaterial);
+      setShowCorrectionModal(false);
+    }
+  };
+
+  const commonMaterials = [
+    'Printed Circuit Board (PCB)',
+    'Lithium-Ion Battery',
+    'Copper Cable & Wiring',
+    'CRT Glass / Monitor',
+    'Smartphone / Mobile Scrap',
+    'Small Electronic Appliances',
+    'Ferrous & Non-Ferrous Scrap'
+  ];
 
   return (
     <div className="space-y-4 pb-8 max-w-lg mx-auto">
@@ -96,6 +151,47 @@ export default function CollectorMaterialResult() {
           <span className="w-5 h-2 rounded-full bg-slate-700"></span>
         </div>
       </div>
+
+      {/* Human AI Feedback Banner Toast */}
+      {feedbackRecorded && (
+        <div className="p-3 rounded-2xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+          <Check className="w-4 h-4" />
+          <span>Material corrected to "{currentMaterial}". Feedback added to AI learning dataset!</span>
+        </div>
+      )}
+
+      {/* Phase 10: LOW CONFIDENCE ROUTING (< 70%) */}
+      {isLowConfidence && (
+        <div className="bg-amber-950/80 border-2 border-amber-500 rounded-3xl p-4 shadow-xl space-y-3">
+          <div className="flex items-center gap-2 text-amber-300 font-bold text-sm">
+            <AlertTriangle className="w-5 h-5 text-amber-400" />
+            <span>AI is not fully confident ({confidence}%)</span>
+          </div>
+          <p className="text-xs text-amber-200 leading-snug">
+            The image was slightly blurry, dark, or contains mixed components. Please choose how to proceed:
+          </p>
+          <div className="grid grid-cols-3 gap-2 pt-1 text-xs">
+            <button
+              onClick={() => navigate('/collector/identify')}
+              className="py-2.5 px-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold border border-slate-700 text-center"
+            >
+              Retake Photo
+            </button>
+            <button
+              onClick={() => setShowCorrectionModal(true)}
+              className="py-2.5 px-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-center"
+            >
+              Select Material
+            </button>
+            <button
+              onClick={() => setProceedWithCaution(true)}
+              className="py-2.5 px-2 bg-amber-600/30 hover:bg-amber-600/50 text-amber-200 border border-amber-500/40 rounded-xl font-bold text-center"
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 2. HIGH HAZARD IMMEDIATE SAFETY ALERT (Battery, CRT) */}
       {isHighHazard && (
@@ -148,7 +244,7 @@ export default function CollectorMaterialResult() {
       <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-2xl space-y-4">
         {/* Photo Container */}
         <div className="relative rounded-2xl overflow-hidden aspect-video bg-black flex items-center justify-center border border-slate-800">
-          <img src={photoUrl} alt={materialName} className="w-full h-full object-cover" />
+          <img src={photoUrl} alt={currentMaterial} className="w-full h-full object-cover" />
           <div className="absolute top-2.5 left-2.5">
             <span className="px-2.5 py-1 rounded-xl text-xs font-bold bg-slate-950/80 backdrop-blur-md text-emerald-400 border border-emerald-500/30 flex items-center gap-1 shadow-md">
               <Award className="w-3.5 h-3.5" />
@@ -165,18 +261,27 @@ export default function CollectorMaterialResult() {
           </div>
         </div>
 
-        {/* Material Identification Header & Voice Listen Action */}
+        {/* Material Header & Human-in-the-Loop Correction Button */}
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-xl font-black text-white tracking-tight">
-              {materialName}
-            </h2>
+            <div className="flex items-center space-x-2">
+              <h2 className="text-xl font-black text-white tracking-tight">
+                {currentMaterial}
+              </h2>
+              <button
+                onClick={() => setShowCorrectionModal(true)}
+                className="p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-emerald-400 hover:bg-slate-700 transition"
+                title="Correct AI Material"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+              </button>
+            </div>
             <p className="text-xs text-slate-400 font-medium mt-0.5">
-              {result.subcategory || 'Grade A E-Waste'}
+              {result.subcategory || 'CPCB Categorized E-Waste'}
             </p>
           </div>
 
-          {/* Voice Output Button (Listen / सुनें / ऐका) */}
+          {/* Voice Output Button */}
           <button
             onClick={handleSpeak}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shadow-md active:scale-95 ${
@@ -190,7 +295,7 @@ export default function CollectorMaterialResult() {
           </button>
         </div>
 
-        {/* Estimated Weight & Approximate Price */}
+        {/* Weight & Value Range */}
         <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-800">
           <div className="bg-slate-950/70 p-3 rounded-2xl border border-slate-800">
             <span className="text-[10px] uppercase font-bold text-slate-400 block">
@@ -211,27 +316,40 @@ export default function CollectorMaterialResult() {
           </div>
         </div>
 
-        {/* Recoverable Materials Chips */}
-        {metals && metals.length > 0 && (
-          <div className="space-y-1.5 pt-1">
-            <span className="text-[11px] font-semibold text-slate-400 block">
-              {t('recoverable_label')}:
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {metals.map((m, idx) => (
-                <span
-                  key={idx}
-                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-950 text-teal-300 border border-teal-800/40"
-                >
-                  {m}
-                </span>
-              ))}
+        {/* Phase 10: AI Explainability Card (Why This Result?) */}
+        <div className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center space-x-1.5 font-bold text-teal-300">
+              <HelpCircle className="w-4 h-4" />
+              <span>WHY THIS RESULT? (AI EXPLANATION)</span>
             </div>
+            <span className="text-[10px] text-slate-500">Non-scientific guide</span>
           </div>
-        )}
+          <ul className="text-xs text-slate-300 space-y-1">
+            {explainabilityReasons.map((r, i) => (
+              <li key={i} className="flex items-start space-x-1.5">
+                <span className="text-emerald-400 font-bold">•</span>
+                <span>{r}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Phase 10: AI Recommendations Box */}
+        <div className="p-3.5 rounded-2xl bg-emerald-950/20 border border-emerald-500/20 space-y-1.5 text-xs">
+          <div className="text-[10px] font-bold uppercase text-emerald-400">
+            AI RECOMMENDATION & HANDLING
+          </div>
+          <div className="text-slate-300">
+            <strong className="text-white">Recommended Recycler:</strong> {recyclerCategory}
+          </div>
+          <div className="text-slate-400 text-[11px]">
+            <strong className="text-slate-300">Safe Handling:</strong> {recommendedHandling}
+          </div>
+        </div>
       </div>
 
-      {/* Primary Action Button: Check Fair Price (Touch Target 64px+) */}
+      {/* Primary Action Button */}
       <div className="pt-2 space-y-2">
         <button
           onClick={handleCheckFairPrice}
@@ -248,6 +366,38 @@ export default function CollectorMaterialResult() {
           {t('try_another_btn')}
         </button>
       </div>
+
+      {/* Phase 10: Human-in-the-Loop AI Correction Modal */}
+      {showCorrectionModal && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-slate-900 border border-slate-700 p-5 shadow-2xl">
+            <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
+              <h3 className="text-sm font-bold text-white">Correct AI Material</h3>
+              <button onClick={() => setShowCorrectionModal(false)} className="text-slate-400 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-slate-400 mb-3">
+              Select the true material classification. Your correction is stored to improve future AI accuracy.
+            </p>
+            <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1 mb-3">
+              {commonMaterials.map((mat) => (
+                <button
+                  key={mat}
+                  onClick={() => handleCorrectAI(mat)}
+                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition ${
+                    currentMaterial === mat
+                      ? 'bg-emerald-500 text-slate-950 font-bold'
+                      : 'bg-slate-950 text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  {mat}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
