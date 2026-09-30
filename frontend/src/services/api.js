@@ -311,4 +311,15 @@ export const updateRecyclerProfile = async (profileData) => {
   return res.data;
 };
 
+// Admin Settings
+export const getAdminSettings = async () => {
+  const res = await api.get('/admin/settings');
+  return res.data;
+};
+
+export const updateAdminSettings = async (settingsData) => {
+  const res = await api.post('/admin/settings', settingsData);
+  return res.data;
+};
+
 export default api;

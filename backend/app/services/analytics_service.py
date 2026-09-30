@@ -997,6 +997,38 @@ class AnalyticsService:
             for r in recs:
                 writer.writerow([r.id, r.facility_name, r.city, r.authorization_status, "YES" if r.is_active else "NO", r.created_at.strftime("%Y-%m-%d")])
 
+        elif report_type == "traceability":
+            writer.writerow(["Trace ID", "Lot ID", "Collector ID", "Material", "Status", "QR Generated", "Created At"])
+            lots = db.query(EWasteLot).order_by(EWasteLot.created_at.desc()).limit(500).all()
+            for l in lots:
+                writer.writerow([l.trace_id, l.lot_id, l.collector_id, l.material_name, l.status, "YES" if l.qr_code_url else "NO", l.created_at.strftime("%Y-%m-%d %H:%M")])
+
+        elif report_type == "pricing":
+            writer.writerow(["Transaction ID", "Lot ID", "Agreed Rate (INR/kg)", "Final Price (INR)", "Status", "Date"])
+            txns = db.query(Transaction).order_by(Transaction.created_at.desc()).limit(500).all()
+            for t in txns:
+                writer.writerow([t.id, t.lot_id, t.agreed_price_per_kg, t.final_price or t.total_amount or "", t.status, t.created_at.strftime("%Y-%m-%d %H:%M")])
+
+        elif report_type == "collectors":
+            writer.writerow(["Collector Code", "City", "Verified", "Total Weight (kg)", "Total Earnings (INR)", "Onboarded Date"])
+            cols = db.query(CollectorProfile).order_by(CollectorProfile.created_at.desc()).limit(500).all()
+            for c in cols:
+                writer.writerow([f"COL-HYD-{c.id:04d}", c.city or "Hyderabad", "YES" if c.is_verified else "NO", c.total_weight_collected or 0.0, c.total_earnings or 0.0, c.created_at.strftime("%Y-%m-%d")])
+
+        elif report_type == "monthly_impact":
+            writer.writerow(["Metric", "Recorded Value", "Unit", "Regulatory Standard"])
+            dash = cls.get_dashboard_metrics(db=db)
+            writer.writerow(["Total E-Waste Tracked", dash.total_weight, "kg", "CPCB Form-2"])
+            writer.writerow(["Total Metric Tonnes", dash.total_e_waste_tonnes, "Tonnes", "MoEFCC Annual Target"])
+            writer.writerow(["Formalization Rate", f"{dash.formalization_rate_pct}%", "% Transition", "CPCB National Target >75%"])
+            writer.writerow(["Traceable Lots Created", dash.traceable_lots, "Lots", "Digital Provenance Standard"])
+            writer.writerow(["Completed Formal Transactions", dash.completed_transactions, "Transactions", "E-Waste Rules 2022"])
+            writer.writerow(["Collector Value Disbursed", f"INR {dash.total_transaction_value_inr}", "INR", "Direct Beneficiary UPI"])
+            writer.writerow(["Verified Handovers", dash.verified_handovers, "Handovers", "Zero Scale Discrepancy"])
+            writer.writerow(["Active CPCB Recyclers", dash.verified_recyclers, "Facilities", "CPCB Authorized Network"])
+            writer.writerow(["Registered Informal Collectors", dash.active_collectors, "Collectors", "Grassroots Onboarded"])
+            writer.writerow(["AI Guardian Anomalies Flagged", dash.anomaly_count, "Alerts", "Fair Pricing Protection"])
+
         else: # Generic / Material report
             writer.writerow(["Material Name", "Category", "Benchmark Price (INR/kg)", "Hazard Level", "Min Price", "Max Price"])
             mats = db.query(MaterialCategory).all()
@@ -1004,6 +1036,46 @@ class AnalyticsService:
                 writer.writerow([m.name, m.category, getattr(m, 'current_benchmark_price', 0.0), m.hazard_level, getattr(m, 'base_market_price_min', 0.0), getattr(m, 'base_market_price_max', 0.0)])
 
         return output.getvalue()
+
+    @classmethod
+    def get_admin_settings(cls, db: Session) -> Dict[str, Any]:
+        from app.core.config import settings
+        return {
+            "demo_mode": getattr(settings, "ENABLE_DEMO_MODE", True),
+            "system_status": "OPERATIONAL",
+            "price_anomaly_threshold_pct": getattr(settings, "PRICE_ANOMALY_THRESHOLD_PCT", 40.0),
+            "scale_mismatch_threshold_pct": 25.0,
+            "cpcb_sync_interval_mins": 15,
+            "data_masking_enabled": True,
+            "audit_logging_retention_days": 365,
+            "frontend_url": getattr(settings, "FRONTEND_URL", "http://localhost:5173"),
+            "environment": getattr(settings, "ENVIRONMENT", "development")
+        }
+
+    @classmethod
+    def update_admin_settings(
+        cls,
+        db: Session,
+        new_settings: Dict[str, Any],
+        admin_user: Optional[User] = None
+    ) -> Dict[str, Any]:
+        from app.core.config import settings
+        if "price_anomaly_threshold_pct" in new_settings:
+            settings.PRICE_ANOMALY_THRESHOLD_PCT = float(new_settings["price_anomaly_threshold_pct"])
+        if "demo_mode" in new_settings:
+            settings.ENABLE_DEMO_MODE = bool(new_settings["demo_mode"])
+
+        audit = AuditLog(
+            user_id=admin_user.id if admin_user else 1,
+            action="ADMIN_CONFIG_CHANGED",
+            entity_type="SYSTEM_SETTINGS",
+            entity_id="CONFIG",
+            details=f"Admin updated operational configuration: {new_settings}"
+        )
+        db.add(audit)
+        db.commit()
+
+        return cls.get_admin_settings(db)
 
     @classmethod
     def search_admin(cls, db: Session, query: str) -> Dict[str, Any]:

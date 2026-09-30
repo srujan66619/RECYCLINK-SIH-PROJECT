@@ -56,6 +56,7 @@ import AdminCollectorsView from './pages/admin/AdminCollectorsView';
 import AdminMaterialsView from './pages/admin/AdminMaterialsView';
 import AdminReportsView from './pages/admin/AdminReportsView';
 import AdminAuditLogsView from './pages/admin/AdminAuditLogsView';
+import AdminSettingsView from './pages/admin/AdminSettingsView';
 
 // Trace wrapper to consume :traceId param
 function TraceExplorerRoute() {
@@ -186,6 +187,7 @@ export default function App() {
               <Route path="anomalies" element={<AdminAnomaliesView />} />
               <Route path="reports" element={<AdminReportsView />} />
               <Route path="audit-logs" element={<AdminAuditLogsView />} />
+              <Route path="settings" element={<AdminSettingsView />} />
             </Route>
 
             {/* Collector Authentication */}

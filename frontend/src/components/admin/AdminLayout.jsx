@@ -48,30 +48,54 @@ export default function AdminLayout({
     }
   };
 
+  const [systemStatus, setSystemStatus] = useState("OPERATIONAL");
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
+
+  React.useEffect(() => {
+    fetch('/api/health')
+      .then(res => res.ok ? setSystemStatus("OPERATIONAL") : setSystemStatus("DELAYED"))
+      .catch(() => setSystemStatus("DELAYED"));
+  }, []);
+
   const navGroups = [
     {
       title: "Overview",
       items: [
-        { name: "Command Center", path: "/admin", icon: LayoutDashboard, exact: true },
-        { name: "Deep Analytics", path: "/admin/analytics", icon: LineChart },
-        { name: "Traceability Ledger", path: "/admin/trace", icon: ShieldCheck },
+        { name: "Dashboard", path: "/admin", icon: LayoutDashboard, exact: true },
+        { name: "Analytics", path: "/admin/analytics", icon: LineChart },
+        { name: "Traceability", path: "/admin/trace", icon: ShieldCheck },
       ]
     },
     {
       title: "Operations",
       items: [
-        { name: "Transactions Pipeline", path: "/admin/transactions", icon: ArrowLeftRight },
-        { name: "Collectors Registry", path: "/admin/collectors", icon: Users },
-        { name: "Recycler Network", path: "/admin/recyclers", icon: Building2 },
-        { name: "Material Catalog", path: "/admin/materials", icon: Layers },
-        { name: "Anomaly Guardian", path: "/admin/anomalies", icon: AlertOctagon },
+        { name: "Transactions", path: "/admin/transactions", icon: ArrowLeftRight },
+        { name: "Collectors", path: "/admin/collectors", icon: Users },
+        { name: "Recyclers", path: "/admin/recyclers", icon: Building2 },
+        { name: "Materials", path: "/admin/materials", icon: Layers },
+        { name: "Anomalies", path: "/admin/anomalies", icon: AlertOctagon },
       ]
     },
     {
-      title: "Governance & Reporting",
+      title: "Intelligence",
+      items: [
+        { name: "AI Insights", path: "/admin/analytics", icon: BrainCircuit },
+        { name: "Price Intelligence", path: "/admin/analytics", icon: Sparkles },
+        { name: "Recycler Network", path: "/admin/recyclers", icon: Building2 },
+      ]
+    },
+    {
+      title: "Reports",
       items: [
         { name: "Impact Reports", path: "/admin/reports", icon: FileSpreadsheet },
-        { name: "Audit Trail", path: "/admin/audit-logs", icon: ClipboardList },
+      ]
+    },
+    {
+      title: "System",
+      items: [
+        { name: "Audit Logs", path: "/admin/audit-logs", icon: ClipboardList },
+        { name: "Settings", path: "/admin/settings", icon: Settings },
       ]
     }
   ];
@@ -205,10 +229,17 @@ export default function AdminLayout({
           {/* Title & Status */}
           <div className="flex items-center space-x-3">
             <div className="hidden sm:flex items-center space-x-2">
-              <span className="flex items-center space-x-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-                <span>● SYSTEM OPERATIONAL</span>
-              </span>
+              {systemStatus === "OPERATIONAL" ? (
+                <span className="flex items-center space-x-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                  <span>● SYSTEM OPERATIONAL</span>
+                </span>
+              ) : (
+                <span className="flex items-center space-x-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                  <span>● DATA SYNC DELAYED</span>
+                </span>
+              )}
               <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30">
                 DEMO DATA — VERIFIED FOR SIH 2026
               </span>
@@ -216,7 +247,7 @@ export default function AdminLayout({
           </div>
 
           {/* Global Search & Filters */}
-          <div className="flex items-center space-x-2 sm:space-x-3">
+          <div className="flex flex-wrap items-center space-x-2 sm:space-x-3">
             
             {/* Search Button */}
             <button
@@ -230,7 +261,7 @@ export default function AdminLayout({
 
             {/* Date Range Selector */}
             {setSelectedPeriod && (
-              <div className="flex items-center space-x-1 bg-slate-900 px-2 py-1 rounded-xl border border-slate-800">
+              <div className="flex items-center space-x-2 bg-slate-900 px-2 py-1 rounded-xl border border-slate-800">
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
                 <select
                   value={selectedPeriod}
@@ -242,7 +273,26 @@ export default function AdminLayout({
                   <option value="30 Days" className="bg-slate-900 text-white">30 Days</option>
                   <option value="90 Days" className="bg-slate-900 text-white">90 Days</option>
                   <option value="All Time" className="bg-slate-900 text-white">All Time</option>
+                  <option value="Custom" className="bg-slate-900 text-white">Custom Range...</option>
                 </select>
+
+                {selectedPeriod === "Custom" && (
+                  <div className="flex items-center space-x-1 pl-2 border-l border-slate-800 text-[10px]">
+                    <input 
+                      type="date" 
+                      value={customStart}
+                      onChange={(e) => setCustomStart(e.target.value)}
+                      className="bg-slate-950 text-white border border-slate-700 rounded px-1.5 py-0.5 outline-none" 
+                    />
+                    <span className="text-slate-500">to</span>
+                    <input 
+                      type="date" 
+                      value={customEnd}
+                      onChange={(e) => setCustomEnd(e.target.value)}
+                      className="bg-slate-950 text-white border border-slate-700 rounded px-1.5 py-0.5 outline-none" 
+                    />
+                  </div>
+                )}
               </div>
             )}
 

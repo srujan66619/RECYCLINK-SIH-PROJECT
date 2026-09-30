@@ -167,3 +167,26 @@ def test_search_admin():
     data = response.json()
     assert "query" in data
     assert "traces" in data
+
+def test_system_settings():
+    # Test GET settings
+    res = client.get("/api/admin/settings")
+    assert res.status_code == 200
+    cfg = res.json()
+    assert "demo_mode" in cfg
+    assert "system_status" in cfg
+    assert cfg["system_status"] == "OPERATIONAL"
+
+    # Test update settings
+    update_res = client.post("/api/admin/settings", json={"price_anomaly_threshold_pct": 35.0})
+    assert update_res.status_code == 200
+    updated_cfg = update_res.json()
+    assert updated_cfg["price_anomaly_threshold_pct"] == 35.0
+
+def test_all_9_statutory_csv_reports():
+    reports = ["collection", "transactions", "materials", "recyclers", "traceability", "pricing", "anomalies", "collectors", "monthly_impact"]
+    for r in reports:
+        res = client.get(f"/api/admin/reports/export-csv?report_type={r}")
+        assert res.status_code == 200
+        assert res.headers["content-type"].startswith("text/csv")
+        assert len(res.text) > 0

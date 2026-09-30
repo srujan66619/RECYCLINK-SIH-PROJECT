@@ -343,3 +343,28 @@ def search_admin_registry(
     Global command search across traces, lots, and recyclers.
     """
     return AnalyticsService.search_admin(db=db, query=q)
+
+@router.get("/settings")
+def get_system_settings(
+    db: Session = Depends(get_db)
+):
+    """
+    Retrieve current regulatory, surveillance, and operational parameters.
+    """
+    return AnalyticsService.get_admin_settings(db=db)
+
+@router.post("/settings")
+@router.patch("/settings")
+def update_system_settings(
+    payload: Dict[str, Any],
+    current_user: Optional[User] = Depends(get_optional_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Update surveillance thresholds, demonstration mode, and statutory reporting intervals.
+    """
+    return AnalyticsService.update_admin_settings(
+        db=db,
+        new_settings=payload,
+        admin_user=current_user
+    )
