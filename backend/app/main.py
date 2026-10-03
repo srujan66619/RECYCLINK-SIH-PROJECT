@@ -11,14 +11,15 @@ from app.database.session import engine, Base, SessionLocal
 from app.routers import (
     auth, collector, materials, ai_router, pricing_router,
     recyclers, lots, transactions, trace, admin, safety, sync,
-    recycler_portal, handover, intelligence
+    recycler_portal, handover, intelligence, orchestration
 )
 from app.database.migration_phase7 import migrate_database
 from app.database.migration_phase9 import migrate_database_phase9
 from app.database.migration_phase10 import migrate_database_phase10
 from app.database.migration_phase11 import migrate_database_phase11
+from app.database.migration_phase12 import migrate_database_phase12
 
-# Ensure database tables exist and Phase 7, 9, 10 & 11 columns/tables are migrated
+# Ensure database tables exist and Phase 7, 9, 10, 11 & 12 columns/tables are migrated
 Base.metadata.create_all(bind=engine)
 try:
     migrate_database("recyclink.db")
@@ -39,6 +40,12 @@ try:
     migrate_database_phase11("recyclink.db")
 except Exception:
     pass
+
+try:
+    migrate_database_phase12("recyclink.db")
+except Exception:
+    pass
+
 
 
 app = FastAPI(
@@ -131,6 +138,7 @@ app.include_router(sync.router)
 app.include_router(recycler_portal.router)
 app.include_router(handover.router)
 app.include_router(intelligence.router)
+app.include_router(orchestration.router)
 
 
 @app.get("/")

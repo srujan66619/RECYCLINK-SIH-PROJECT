@@ -66,6 +66,9 @@ import AdminDemoControlView from './pages/admin/AdminDemoControlView';
 // Phase 11: Autonomous Circular Economy Intelligence & Network Optimization
 import AdminIntelligenceCenter from './pages/admin/AdminIntelligenceCenter';
 
+// Phase 12: Circular Economy Network Orchestration, Trust & Institutional Readiness
+import AdminNetworkOrchestrationView from './pages/admin/AdminNetworkOrchestrationView';
+
 
 // Trace wrapper to consume :traceId param
 function TraceExplorerRoute() {
@@ -217,6 +220,7 @@ export default function App() {
               <Route path="settings" element={<AdminSettingsView />} />
               <Route path="circular-flow" element={<CircularFlowView />} />
               <Route path="intelligence" element={<AdminIntelligenceCenter />} />
+              <Route path="orchestration" element={<AdminNetworkOrchestrationView />} />
               <Route path="demo" element={<AdminDemoControlView />} />
             </Route>
 

@@ -406,5 +406,119 @@ export const getCollectorInsights = async (collectorId) => {
   return res.data;
 };
 
+// ==========================================
+// PHASE 12: CIRCULAR ECONOMY ORCHESTRATION & TRUST
+// ==========================================
+
+export const getCircularNetworkGraph = async () => {
+  const res = await api.get('/orchestration/network-graph');
+  return res.data;
+};
+
+export const getNetworkHealth = async () => {
+  const res = await api.get('/orchestration/network-health');
+  return res.data;
+};
+
+export const getParticipantTrustProfiles = async (role) => {
+  const res = await api.get('/orchestration/trust-profiles', { params: role ? { role } : {} });
+  return res.data;
+};
+
+export const getDisputes = async (status) => {
+  const res = await api.get('/orchestration/disputes', { params: status ? { status } : {} });
+  return res.data;
+};
+
+export const getDispute = async (id) => {
+  const res = await api.get(`/orchestration/disputes/${id}`);
+  return res.data;
+};
+
+export const createDispute = async (data) => {
+  const res = await api.post('/orchestration/disputes', data);
+  return res.data;
+};
+
+export const resolveDispute = async (id, data) => {
+  const res = await api.post(`/orchestration/disputes/${id}/resolve`, data);
+  return res.data;
+};
+
+export const getIncentives = async (userId) => {
+  const res = await api.get('/orchestration/incentives', { params: userId ? { user_id: userId } : {} });
+  return res.data;
+};
+
+export const getAntiGamingAudit = async () => {
+  const res = await api.get('/orchestration/anti-gaming');
+  return res.data;
+};
+
+export const getInstitutionalPartners = async (status) => {
+  const res = await api.get('/orchestration/partners', { params: status ? { status } : {} });
+  return res.data;
+};
+
+export const createInstitutionalPartner = async (data) => {
+  const res = await api.post('/orchestration/partners', data);
+  return res.data;
+};
+
+export const verifyInstitutionalPartner = async (id, data) => {
+  const res = await api.post(`/orchestration/partners/${id}/verify`, data);
+  return res.data;
+};
+
+export const runMultiPolicySimulation = async (data) => {
+  const res = await api.post('/orchestration/policy-simulation', data);
+  return res.data;
+};
+
+export const getMaterialFlow = async (material) => {
+  const res = await api.get('/orchestration/material-flow', { params: material ? { material } : {} });
+  return res.data;
+};
+
+export const getDataQuality = async () => {
+  const res = await api.get('/orchestration/data-quality');
+  return res.data;
+};
+
+export const getSystemHealth = async () => {
+  const res = await api.get('/orchestration/system-health');
+  return res.data;
+};
+
+export const getPolicyRules = async () => {
+  const res = await api.get('/orchestration/policies');
+  return res.data;
+};
+
+export const updatePolicyRule = async (key, data) => {
+  const res = await api.put(`/orchestration/policies/${key}`, data);
+  return res.data;
+};
+
+export const getPolicyVersions = async (key) => {
+  const res = await api.get(`/orchestration/policies/${key}/versions`);
+  return res.data;
+};
+
+export const rollbackPolicyRule = async (data) => {
+  const res = await api.post('/orchestration/policies/rollback', data);
+  return res.data;
+};
+
+export const getOperationalIncidents = async (status) => {
+  const res = await api.get('/orchestration/incidents', { params: status ? { status } : {} });
+  return res.data;
+};
+
+export const getInstitutionalReport = async () => {
+  const res = await api.get('/orchestration/reports/institutional');
+  return res.data;
+};
+
 export default api;
 

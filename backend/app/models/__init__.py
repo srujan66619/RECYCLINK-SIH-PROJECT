@@ -22,6 +22,12 @@ from app.models.intelligence_recommendation import (
 )
 from app.models.decision_history import DecisionHistory
 from app.models.trace_alert import TraceAlert, TraceAlertSeverity, TraceAlertStatus
+from app.models.dispute import DisputeRecord, DisputeStatus, DisputeType
+from app.models.participant_trust import ParticipantTrust, TrustTier
+from app.models.incentive import IncentiveRecord, IncentiveType, IncentiveStatus
+from app.models.institutional_partner import InstitutionalPartner, PartnerType, PartnerVerificationStatus
+from app.models.policy_rule import PolicyRule, PolicyVersion
+from app.models.operational_incident import OperationalIncident, IncidentStatus, IncidentSeverity
 
 __all__ = [
     "Base",
@@ -61,6 +67,25 @@ __all__ = [
     "DecisionHistory",
     "TraceAlert",
     "TraceAlertSeverity",
-    "TraceAlertStatus"
+    "TraceAlertStatus",
+
+    # Phase 12
+    "DisputeRecord",
+    "DisputeStatus",
+    "DisputeType",
+    "ParticipantTrust",
+    "TrustTier",
+    "IncentiveRecord",
+    "IncentiveType",
+    "IncentiveStatus",
+    "InstitutionalPartner",
+    "PartnerType",
+    "PartnerVerificationStatus",
+    "PolicyRule",
+    "PolicyVersion",
+    "OperationalIncident",
+    "IncidentStatus",
+    "IncidentSeverity"
 ]
+
 

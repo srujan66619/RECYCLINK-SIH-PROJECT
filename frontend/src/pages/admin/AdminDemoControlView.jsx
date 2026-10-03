@@ -124,6 +124,15 @@ export default function AdminDemoControlView() {
       desc: "PCB capacity bottleneck detected at 94% ceiling → System analyzes ground-truth database records → Generates recommendation REC-2026-001 with evidence & counterfactual → Admin executes human-in-the-loop approval → Decision history audit written & network rebalanced.",
       actionText: "Launch Intelligence Center",
       route: "/admin/intelligence"
+    },
+    {
+      id: "scenario_8",
+      title: "Scenario 8: Network Orchestration & Trust Hub",
+      badge: "Phase 12 Flagship",
+      badgeColor: "cyan",
+      desc: "Community collection surge coordinates GHMC Ward 12 & JNTU Hub → Network Health (88.6/100) with factor explainability → Participant Trust Profiles audited with zero discrimination → Dispute DISP-2026-001 inspected with objective AI discrepancy assistance → Admin executes human resolution → Multi-Policy Simulator computes 3-way what-if comparison.",
+      actionText: "Launch Network Orchestration",
+      route: "/admin/orchestration"
     }
   ];
 
